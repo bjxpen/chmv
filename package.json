@@ -1,0 +1,25 @@
+{
+  "name": "chmv",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Client-side CHM reader PWA — parses .chm files entirely in the browser.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node test/unit-test.mjs && node test/store-test.mjs && node test/extract-test.mjs test/fixtures/putty.chm"
+  },
+  "dependencies": {
+    "@preact/signals": "^2.0.0",
+    "comlink": "^4.4.1",
+    "htm": "^3.1.1",
+    "idb": "^8.0.0",
+    "preact": "^10.24.0"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.11.1",
+    "vite": "^6.0.0",
+    "vite-plugin-pwa": "^0.21.0"
+  }
+}
