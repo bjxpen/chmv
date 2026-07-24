@@ -1,151 +1,142 @@
 /**
  * Toolbar Component - Reader controls and settings
+ * LitElement-based with declarative rendering
  */
-import { appState } from '../state/app-state.js';
+import { html, css } from 'lit';
+import { BaseComponent } from '../core/base-component.js';
 
-export class Toolbar {
+export class Toolbar extends BaseComponent {
+  static properties = {
+    fontSize: { type: Number },
+    contentWidth: { type: String },
+    theme: { type: String },
+    fontFamily: { type: String },
+    stripLegacyStyles: { type: Boolean },
+    encoding: { type: String }
+  };
+
+  static styles = css`
+    :host { display: block; }
+    .toolbar {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.5rem; background: #fff;
+      border-bottom: 1px solid #dcdde1; flex-wrap: wrap;
+    }
+    .group { display: flex; align-items: center; gap: 0.25rem; }
+    .btn {
+      padding: 0.4rem 0.75rem; border: 1px solid #dcdde1;
+      background: white; border-radius: 4px; cursor: pointer;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .btn:hover { background: #ecf0f1; }
+    .btn.active { background: #3498db; color: white; border-color: #3498db; }
+    .select {
+      padding: 0.4rem 0.5rem; border: 1px solid #dcdde1;
+      border-radius: 4px; font-size: 0.85rem; background: white; cursor: pointer;
+    }
+    .label { font-size: 0.85rem; min-width: 40px; text-align: center; }
+    .divider { width: 1px; height: 24px; background: #dcdde1; margin: 0 0.5rem; }
+    .spacer { flex: 1; }
+  `;
+
   constructor() {
-    this.container = null;
+    super();
+    this.fontSize = 16;
+    this.contentWidth = '800px';
+    this.theme = 'light';
+    this.fontFamily = 'system-ui';
+    this.stripLegacyStyles = false;
+    this.encoding = 'UTF-8';
     this.onAction = null;
   }
 
-  init(container) {
-    this.container = container;
-    this.render();
-    this.setupEventListeners();
-  }
-
   render() {
-    const prefs = appState.getPreferences();
-    
-    this.container.innerHTML = `
+    return html`
       <div class="toolbar">
-        <div class="toolbar-group">
-          <button class="toolbar-btn" data-action="open-file" title="Open CHM File (Ctrl+O)">
+        <div class="group">
+          <button class="btn" @click=${() => this.dispatch('open-file')} title="Open (Ctrl+O)">
             📂 Open
           </button>
         </div>
         
-        <div class="toolbar-divider"></div>
+        <div class="divider"></div>
         
-        <div class="toolbar-group">
-          <button class="toolbar-btn" data-action="zoom-in" title="Increase Font Size (Ctrl++)">A+</button>
-          <button class="toolbar-btn" data-action="zoom-out" title="Decrease Font Size (Ctrl+-)">A-</button>
-          <span class="toolbar-label">${prefs.fontSize}px</span>
+        <div class="group">
+          <button class="btn" @click=${() => this.dispatch('zoom-in')} title="Zoom In (Ctrl++)">A+</button>
+          <button class="btn" @click=${() => this.dispatch('zoom-out')} title="Zoom Out (Ctrl+-)">A-</button>
+          <span class="label">${this.fontSize}px</span>
         </div>
         
-        <div class="toolbar-divider"></div>
+        <div class="divider"></div>
         
-        <div class="toolbar-group">
-          <select class="toolbar-select" data-action="width">
-            <option value="600px" ${prefs.contentWidth === '600px' ? 'selected' : ''}>Narrow</option>
-            <option value="800px" ${prefs.contentWidth === '800px' ? 'selected' : ''}>Medium</option>
-            <option value="1000px" ${prefs.contentWidth === '1000px' ? 'selected' : ''}>Wide</option>
-            <option value="100%" ${prefs.contentWidth === '100%' ? 'selected' : ''}>Full</option>
+        <div class="group">
+          <select class="select" @change=${(e) => this.dispatch('width', e.target.value)}>
+            <option value="600px" ?selected=${this.contentWidth === '600px'}>Narrow</option>
+            <option value="800px" ?selected=${this.contentWidth === '800px'}>Medium</option>
+            <option value="1000px" ?selected=${this.contentWidth === '1000px'}>Wide</option>
+            <option value="100%" ?selected=${this.contentWidth === '100%'}>Full</option>
           </select>
         </div>
         
-        <div class="toolbar-divider"></div>
+        <div class="divider"></div>
         
-        <div class="toolbar-group">
-          <select class="toolbar-select" data-action="theme">
-            <option value="light" ${prefs.theme === 'light' ? 'selected' : ''}>Light</option>
-            <option value="sepia" ${prefs.theme === 'sepia' ? 'selected' : ''}>Sepia</option>
-            <option value="dark" ${prefs.theme === 'dark' ? 'selected' : ''}>Dark</option>
-            <option value="oled" ${prefs.theme === 'oled' ? 'selected' : ''}>OLED</option>
+        <div class="group">
+          <select class="select" @change=${(e) => this.dispatch('theme', e.target.value)}>
+            <option value="light" ?selected=${this.theme === 'light'}>Light</option>
+            <option value="sepia" ?selected=${this.theme === 'sepia'}>Sepia</option>
+            <option value="dark" ?selected=${this.theme === 'dark'}>Dark</option>
+            <option value="oled" ?selected=${this.theme === 'oled'}>OLED</option>
           </select>
         </div>
         
-        <div class="toolbar-divider"></div>
+        <div class="divider"></div>
         
-        <div class="toolbar-group">
-          <select class="toolbar-select" data-action="font-family">
-            <option value="system-ui" ${prefs.fontFamily === 'system-ui' ? 'selected' : ''}>Sans-Serif</option>
-            <option value="Georgia, serif" ${prefs.fontFamily.includes('Georgia') ? 'selected' : ''}>Serif</option>
-            <option value="'KaiTi', 'STKaiti', serif" ${prefs.fontFamily.includes('KaiTi') ? 'selected' : ''}>KaiTi</option>
+        <div class="group">
+          <select class="select" @change=${(e) => this.dispatch('font', e.target.value)}>
+            <option value="system-ui" ?selected=${this.fontFamily === 'system-ui'}>Sans</option>
+            <option value="Georgia, serif" ?selected=${this.fontFamily?.includes('Georgia')}>Serif</option>
+            <option value="'KaiTi', 'STKaiti', serif" ?selected=${this.fontFamily?.includes('KaiTi')}>KaiTi</option>
           </select>
         </div>
         
-        <div class="toolbar-divider"></div>
+        <div class="divider"></div>
         
-        <div class="toolbar-group">
-          <button class="toolbar-btn ${prefs.stripLegacyStyles ? 'active' : ''}" data-action="strip-styles" title="Strip Legacy Styles">
+        <div class="group">
+          <button class="btn ${this.stripLegacyStyles ? 'active' : ''}" 
+            @click=${() => this.dispatch('strip-styles')} title="Strip Legacy Styles">
             🎨 Clean
           </button>
-          <select class="toolbar-select" data-action="encoding">
-            <option value="UTF-8" ${prefs.encoding === 'UTF-8' ? 'selected' : ''}>UTF-8</option>
-            <option value="GBK" ${prefs.encoding === 'GBK' ? 'selected' : ''}>GBK</option>
-            <option value="GB18030" ${prefs.encoding === 'GB18030' ? 'selected' : ''}>GB18030</option>
-            <option value="Big5" ${prefs.encoding === 'Big5' ? 'selected' : ''}>Big5</option>
-            <option value="Shift-JIS" ${prefs.encoding === 'Shift-JIS' ? 'selected' : ''}>Shift-JIS</option>
+          <select class="select" @change=${(e) => this.dispatch('encoding', e.target.value)}>
+            <option value="UTF-8" ?selected=${this.encoding === 'UTF-8'}>UTF-8</option>
+            <option value="GBK" ?selected=${this.encoding === 'GBK'}>GBK</option>
+            <option value="GB18030" ?selected=${this.encoding === 'GB18030'}>GB18030</option>
+            <option value="Big5" ?selected=${this.encoding === 'Big5'}>Big5</option>
+            <option value="Shift-JIS" ?selected=${this.encoding === 'Shift-JIS'}>Shift-JIS</option>
           </select>
         </div>
         
-        <div class="toolbar-spacer"></div>
+        <div class="spacer"></div>
         
-        <div class="toolbar-group">
-          <button class="toolbar-btn" data-action="prev-chapter" title="Previous Chapter (←)">← Prev</button>
-          <button class="toolbar-btn" data-action="next-chapter" title="Next Chapter (→)">Next →</button>
+        <div class="group">
+          <button class="btn" @click=${() => this.dispatch('prev-chapter')} title="Previous (←)">← Prev</button>
+          <button class="btn" @click=${() => this.dispatch('next-chapter')} title="Next (→)">Next →</button>
         </div>
       </div>
     `;
   }
 
-  setupEventListeners() {
-    this.container.addEventListener('click', (e) => {
-      const btn = e.target.closest('.toolbar-btn');
-      if (!btn) return;
-      
-      const action = btn.dataset.action;
-      if (action && this.onAction) {
-        this.onAction(action);
-      }
-    });
-
-    this.container.querySelectorAll('.toolbar-select').forEach(select => {
-      select.addEventListener('change', (e) => {
-        const action = e.target.dataset.action;
-        const value = e.target.value;
-        if (action && this.onAction) {
-          this.onAction(action, value);
-        }
-      });
-    });
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'o' || e.key === 'O') {
-          e.preventDefault();
-          if (this.onAction) this.onAction('open-file');
-        } else if (e.key === '+' || e.key === '=') {
-          e.preventDefault();
-          if (this.onAction) this.onAction('zoom-in');
-        } else if (e.key === '-') {
-          e.preventDefault();
-          if (this.onAction) this.onAction('zoom-out');
-        }
-      } else if (e.key === 'ArrowLeft') {
-        if (this.onAction) this.onAction('prev-chapter');
-      } else if (e.key === 'ArrowRight') {
-        if (this.onAction) this.onAction('next-chapter');
-      } else if (e.key === ' ') {
-        // Space for scroll handled by reader
-      }
-    });
+  dispatch(action, value) {
+    this.onAction?.(action, value);
   }
 
-  setOnAction(handler) {
-    this.onAction = handler;
-  }
-
-  updateZoomDisplay(fontSize) {
-    const label = this.container.querySelector('[data-action="zoom-in"] + [data-action="zoom-out"] + .toolbar-label');
-    if (label) label.textContent = `${fontSize}px`;
-  }
-
-  destroy() {
-    this.container.innerHTML = '';
-    this.container = null;
+  setPrefs(prefs) {
+    this.fontSize = prefs.fontSize || 16;
+    this.contentWidth = prefs.contentWidth || '800px';
+    this.theme = prefs.theme || 'light';
+    this.fontFamily = prefs.fontFamily || 'system-ui';
+    this.stripLegacyStyles = prefs.stripLegacyStyles || false;
+    this.encoding = prefs.encoding || 'UTF-8';
   }
 }
+
+customElements.define('chmv-toolbar', Toolbar);

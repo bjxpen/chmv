@@ -1,251 +1,126 @@
 /**
- * CHM File Parser - Core parsing logic for CHM containers
- * Handles LZX decompression, file extraction, and metadata parsing
+ * CHM Parser - Parses Microsoft Compiled HTML Help files
+ * Uses declarative parsing approach with proper resource management
  */
+import { LZXDecoder } from './lzx.js';
 
-import { LZX } from './lzx.js';
-
-// CHM Header structures
-const CHM_SIGNATURE = 0x4d534346; // "MSCF"
-const CHM_VERSION3 = 3;
-const CHM_VERSION4 = 4;
+const SIGNATURE = 0x4d534346; // "MSCF"
 
 export class CHMParser {
   constructor() {
-    this.lzx = new LZX();
+    this.lzx = new LZXDecoder();
     this.files = new Map();
     this.toc = null;
     this.index = null;
     this.metadata = {};
-    this.arrayBuffer = null;
-    this.dataView = null;
+    this.buffer = null;
   }
 
-  /**
-   * Parse a CHM file from ArrayBuffer
-   * @param {ArrayBuffer} arrayBuffer - The CHM file as ArrayBuffer
-   * @returns {Promise<Object>} Parsed CHM data
-   */
   async parse(arrayBuffer) {
-    this.arrayBuffer = arrayBuffer;
-    this.dataView = new DataView(arrayBuffer);
-    this.files.clear();
+    this.buffer = new Uint8Array(arrayBuffer);
+    const view = new DataView(arrayBuffer);
+    
+    const header = this.parseHeader(view);
+    if (!header.valid) throw new Error('Invalid CHM file');
 
-    try {
-      const header = this.parseHeader();
-      if (!header.valid) {
-        throw new Error('Invalid CHM file format');
-      }
-
-      this.metadata = {
-        version: header.version,
-        headerSize: header.headerSize,
-        totalFiles: 0
-      };
-
-      // Parse directory entries
-      await this.parseDirectoryEntries(header);
-
-      return {
-        files: this.files,
-        toc: this.toc,
-        index: this.index,
-        metadata: this.metadata
-      };
-    } catch (error) {
-      console.error('CHM Parse Error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Parse CHM header
-   * @returns {Object} Header information
-   */
-  parseHeader() {
-    const signature = this.dataView.getUint32(0, true);
-    if (signature !== CHM_SIGNATURE) {
-      return { valid: false };
-    }
-
-    const version = this.dataView.getUint32(4, true);
-    if (version !== CHM_VERSION3 && version !== CHM_VERSION4) {
-      return { valid: false, error: `Unsupported CHM version: ${version}` };
-    }
-
-    const headerSize = this.dataView.getUint32(8, true);
-    const unknown1 = this.dataView.getUint32(12, true);
+    this.metadata = { version: header.version, headerSize: header.size };
+    await this.parseDirectory(header);
 
     return {
-      valid: true,
-      version,
-      headerSize,
-      unknown1
+      files: this.files,
+      toc: this.toc,
+      index: this.index,
+      metadata: this.metadata
     };
   }
 
-  /**
-   * Parse directory entries from the CHM file
-   * @param {Object} header - Parsed header info
-   */
-  async parseDirectoryEntries(header) {
-    const offset = header.headerSize;
+  parseHeader(view) {
+    const sig = view.getUint32(0, true);
+    if (sig !== SIGNATURE) return { valid: false };
     
-    // Read chunk size (first 4 bytes after header)
-    const chunkSize = this.dataView.getUint32(offset, true);
+    const version = view.getUint32(4, true);
+    if (![3, 4].includes(version)) return { valid: false };
     
-    // Check if compressed (bit 16 set)
+    return { valid: true, version, size: view.getUint32(8, true) };
+  }
+
+  async parseDirectory(header) {
+    const offset = header.size;
+    const chunkInfo = new DataView(this.buffer.buffer, offset, 8);
+    const chunkSize = chunkInfo.getUint32(0, true);
     const isCompressed = (chunkSize & 0x10000) !== 0;
-    const actualChunkSize = chunkSize & 0xFFFF;
-    
-    let dirOffset = offset + 4;
+    const actualSize = chunkSize & 0xFFFF;
+
+    let dirData = this.buffer.slice(offset + 4, offset + 4 + actualSize);
     
     if (isCompressed) {
-      // Decompress directory entries
-      const compressedDirData = new Uint8Array(
-        this.arrayBuffer,
-        dirOffset,
-        actualChunkSize
-      );
-      
-      try {
-        const decompressedData = await this.lzx.decompress(compressedDirData);
-        await this.processDirectoryEntries(decompressedData, 0);
-      } catch (error) {
-        console.error('Failed to decompress directory:', error);
-        throw error;
-      }
-    } else {
-      // Directory is not compressed
-      const dirData = new Uint8Array(
-        this.arrayBuffer,
-        dirOffset,
-        actualChunkSize
-      );
-      await this.processDirectoryEntries(dirData, 0);
+      dirData = await this.lzx.decompress(dirData);
     }
 
+    this.parseEntries(dirData);
     this.metadata.totalFiles = this.files.size;
   }
 
-  /**
-   * Process directory entries from raw data
-   * @param {Uint8Array} data - Directory entry data
-   * @param {number} offset - Starting offset
-   */
-  async processDirectoryEntries(data, offset) {
+  parseEntries(data) {
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-    let pos = offset;
+    let pos = 0;
 
     while (pos < data.length - 8) {
-      // Read entry header
-      const entryType = view.getUint32(pos, true);
+      const type = view.getUint32(pos, true);
       pos += 4;
 
-      if (entryType === 0x01 || entryType === 0x00) {
-        // File or directory entry
-        const length = view.getUint32(pos, true);
+      if (type === 0x01 || type === 0x00) {
+        const len = view.getUint32(pos, true);
         pos += 4;
+        if (pos + len > data.length) break;
 
-        if (pos + length > data.length) break;
-
-        const entryData = data.slice(pos, pos + length);
-        const entry = this.parseEntry(entryData, entryType === 0x01);
-        
+        const entry = this.parseEntry(data.slice(pos, pos + len), type === 0x01);
         if (entry) {
           this.files.set(entry.path, entry);
-          
-          // Check for TOC (.hhc) and Index (.hhk) files
-          const lowerPath = entry.path.toLowerCase();
-          if (lowerPath.endsWith('.hhc') && !this.toc) {
-            this.toc = entry;
-          } else if (lowerPath.endsWith('.hhk') && !this.index) {
-            this.index = entry;
-          }
+          const lower = entry.path.toLowerCase();
+          if (lower.endsWith('.hhc') && !this.toc) this.toc = entry;
+          if (lower.endsWith('.hhk') && !this.index) this.index = entry;
         }
-
-        pos += length;
-      } else if (entryType === 0xFFFFFFFF) {
-        // End of entries
+        pos += len;
+      } else if (type === 0xFFFFFFFF) {
         break;
       } else {
-        // Unknown entry type, try to skip
         break;
       }
     }
   }
 
-  /**
-   * Parse a single directory entry
-   * @param {Uint8Array} data - Entry data
-   * @param {boolean} isFile - Whether this is a file entry
-   * @returns {Object|null} Parsed entry
-   */
   parseEntry(data, isFile) {
     try {
-      let pos = 0;
       const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-
-      // Skip unknown header bytes (typically 24-28 bytes)
-      // Structure varies between CHM versions
-      pos = 24;
-
+      let pos = 24;
       if (pos >= data.length) return null;
 
-      // Read path length (UTF-16LE string)
-      const pathLenBytes = view.getUint32(pos, true);
+      const pathLen = view.getUint32(pos, true);
       pos += 4;
+      if (!pathLen || pos + pathLen > data.length) return null;
 
-      if (pathLenBytes === 0 || pos + pathLenBytes > data.length) {
-        return null;
-      }
+      const path = this.decodeUTF16LE(data.slice(pos, pos + pathLen));
+      pos += pathLen;
 
-      // Decode UTF-16LE path
-      const pathBytes = data.slice(pos, pos + pathLenBytes);
-      const path = this.decodeUTF16LE(pathBytes);
-      pos += pathLenBytes;
-
-      // For files, read content offset and length
-      let contentOffset = 0;
-      let contentLength = 0;
-      let isCompressed = false;
-
+      let contentOffset = 0, contentLength = 0, compressed = false;
       if (isFile && pos + 16 <= data.length) {
         contentOffset = Number(view.getBigUint64(pos, true));
-        pos += 8;
-        contentLength = Number(view.getBigUint64(pos, true));
-        pos += 8;
-
-        // Check compression flag
-        if (pos + 4 <= data.length) {
-          const flags = view.getUint32(pos, true);
-          isCompressed = (flags & 0x1) !== 0;
+        contentLength = Number(view.getBigUint64(pos + 8, true));
+        if (pos + 20 <= data.length) {
+          compressed = (view.getUint32(pos + 16, true) & 0x1) !== 0;
         }
       }
 
-      return {
-        path,
-        isFile,
-        contentOffset,
-        contentLength,
-        isCompressed,
-        lastModified: Date.now()
-      };
-    } catch (error) {
-      console.warn('Failed to parse entry:', error);
+      return { path, isFile, contentOffset, contentLength, compressed };
+    } catch {
       return null;
     }
   }
 
-  /**
-   * Decode UTF-16LE byte array to string
-   * @param {Uint8Array} bytes - UTF-16LE encoded bytes
-   * @returns {string} Decoded string
-   */
   decodeUTF16LE(bytes) {
-    const len = bytes.length;
     let result = '';
-    for (let i = 0; i < len; i += 2) {
+    for (let i = 0; i < bytes.length; i += 2) {
       const code = bytes[i] | (bytes[i + 1] << 8);
       if (code === 0) break;
       result += String.fromCharCode(code);
@@ -253,95 +128,43 @@ export class CHMParser {
     return result;
   }
 
-  /**
-   * Extract and decompress file content
-   * @param {Object} entry - File entry
-   * @returns {Promise<Uint8Array>} Decompressed file content
-   */
   async extractFile(entry) {
-    if (!entry.isFile) {
-      throw new Error('Cannot extract directory entry');
-    }
+    if (!entry.isFile || !this.buffer) throw new Error('Invalid entry');
+    if (!entry.contentLength) return new Uint8Array(0);
 
-    const { contentOffset, contentLength, isCompressed } = entry;
-
-    if (contentLength === 0) {
-      return new Uint8Array(0);
-    }
-
-    const fileData = new Uint8Array(
-      this.arrayBuffer,
-      contentOffset,
-      contentLength
-    );
-
-    if (isCompressed) {
-      return await this.lzx.decompress(fileData);
-    }
-
-    return fileData;
+    const data = this.buffer.slice(entry.contentOffset, entry.contentOffset + entry.contentLength);
+    return entry.compressed ? await this.lzx.decompress(data) : data;
   }
 
-  /**
-   * Get file content as text with specified encoding
-   * @param {Object} entry - File entry
-   * @param {string} encoding - Text encoding (UTF-8, GBK, Big5, etc.)
-   * @returns {Promise<string>} Decoded text content
-   */
   async getTextContent(entry, encoding = 'UTF-8') {
     const data = await this.extractFile(entry);
-    const decoder = new TextDecoder(encoding);
-    return decoder.decode(data);
+    return new TextDecoder(encoding).decode(data);
   }
 
-  /**
-   * Get file content as blob URL
-   * @param {Object} entry - File entry
-   * @returns {Promise<string>} Blob URL
-   */
-  async getBlobURL(entry) {
+  async getBlobURL(entry, mimeType = 'application/octet-stream') {
     const data = await this.extractFile(entry);
-    const blob = new Blob([data], { type: 'application/octet-stream' });
+    const blob = new Blob([data], { type: mimeType });
     return URL.createObjectURL(blob);
   }
 
-  /**
-   * Find entry by path (case-insensitive)
-   * @param {string} path - File path
-   * @returns {Object|null} Found entry or null
-   */
   findEntry(path) {
-    const lowerPath = path.toLowerCase();
-    for (const [key, entry] of this.files.entries()) {
-      if (key.toLowerCase() === lowerPath) {
-        return entry;
-      }
+    const lower = path.toLowerCase();
+    for (const [key, entry] of this.files) {
+      if (key.toLowerCase() === lower) return entry;
     }
     return null;
   }
 
-  /**
-   * Get all HTML files sorted by path
-   * @returns {Array} Array of HTML file entries
-   */
   getHTMLFiles() {
-    const htmlFiles = [];
-    for (const entry of this.files.values()) {
-      if (entry.isFile && /\.(htm|html)$/i.test(entry.path)) {
-        htmlFiles.push(entry);
-      }
-    }
-    return htmlFiles.sort((a, b) => a.path.localeCompare(b.path));
+    return Array.from(this.files.values())
+      .filter(e => e.isFile && /\.(htm|html)$/i.test(e.path))
+      .sort((a, b) => a.path.localeCompare(b.path));
   }
 
-  /**
-   * Cleanup resources
-   */
   dispose() {
     this.files.clear();
     this.toc = null;
     this.index = null;
-    this.arrayBuffer = null;
-    this.dataView = null;
+    this.buffer = null;
   }
 }

@@ -1,55 +1,35 @@
 /**
- * HTML Content Renderer
- * Handles chapter rendering with sandboxed isolation and asset management
+ * Content Renderer - Shadow DOM based chapter rendering
+ * Handles asset management, link routing, and theme application
  */
-
-import { appState } from '../state/app-state.js';
+import { html, css } from 'lit';
 
 export class ContentRenderer {
   constructor() {
     this.container = null;
-    this.shadowRoot = null;
-    this.currentBlobURLs = new Set();
-    this.currentChapter = null;
-    this.onLinkClick = null;
-    this.onContentLoad = null;
+    this.shadow = null;
+    this.blobURLs = new Set();
+    this.chapter = null;
+    this.onLink = null;
+    this.onLoad = null;
   }
 
-  /**
-   * Initialize the renderer
-   * @param {HTMLElement} container - Container element
-   */
   init(container) {
     this.container = container;
-    
-    // Create shadow DOM for sandboxed rendering
-    const shadowHost = document.createElement('div');
-    shadowHost.className = 'content-host';
-    container.appendChild(shadowHost);
-    
-    this.shadowRoot = shadowHost.attachShadow({ mode: 'open' });
-    
-    // Inject base styles into shadow DOM
-    this.injectBaseStyles();
+    const host = document.createElement('div');
+    host.className = 'content-host';
+    container.appendChild(host);
+    this.shadow = host.attachShadow({ mode: 'open' });
+    this.injectStyles();
   }
 
-  /**
-   * Inject base styles into shadow DOM
-   */
-  injectBaseStyles() {
+  injectStyles() {
     const style = document.createElement('style');
-    style.textContent = `
-      :host {
-        display: block;
-        width: 100%;
-        min-height: 100%;
-      }
-      
-      .content-wrapper {
+    style.textContent = css`
+      :host { display: block; width: 100%; min-height: 100%; }
+      .content {
         width: var(--content-width, 800px);
-        max-width: 100%;
-        margin: 0 auto;
-        padding: 2rem;
+        max-width: 100%; margin: 0 auto; padding: 2rem;
         font-size: var(--font-size, 16px);
         line-height: var(--line-height, 1.6);
         letter-spacing: var(--letter-spacing, 0);
@@ -57,334 +37,127 @@ export class ContentRenderer {
         color: var(--text-color, #333);
         background: var(--bg-color, #fff);
       }
-      
-      .content-wrapper img {
-        max-width: 100%;
-        height: auto;
+      .content img { max-width: 100%; height: auto; }
+      .content a { color: var(--link-color, #3498db); text-decoration: none; }
+      .content a:hover { text-decoration: underline; }
+      .content:lang(zh), .content:lang(ja), .content:lang(ko) {
+        word-break: break-all; line-break: strict; overflow-wrap: break-word;
       }
-      
-      .content-wrapper a {
-        color: var(--link-color, #3498db);
-        text-decoration: none;
-      }
-      
-      .content-wrapper a:hover {
-        text-decoration: underline;
-      }
-      
-      /* CJK typography optimizations */
-      .content-wrapper:lang(zh),
-      .content-wrapper:lang(ja),
-      .content-wrapper:lang(ko) {
-        word-break: break-all;
-        line-break: strict;
-        overflow-wrap: break-word;
-      }
-      
-      /* Remove legacy inline styles when stripLegacyStyles is enabled */
-      .strip-legacy [style*="background"],
-      .strip-legacy [style*="color"],
-      .strip-legacy [style*="font-size"] {
-        background: inherit !important;
-        color: inherit !important;
-        font-size: inherit !important;
+      .strip-legacy [style*="background"], .strip-legacy [style*="color"] {
+        background: inherit !important; color: inherit !important;
       }
     `;
-    this.shadowRoot.appendChild(style);
+    this.shadow.appendChild(style);
   }
 
-  /**
-   * Render chapter content
-   * @param {string} html - HTML content
-   * @param {string} chapterPath - Chapter path for link routing
-   * @param {Object} options - Rendering options
-   */
-  render(html, chapterPath, options = {}) {
-    this.currentChapter = chapterPath;
+  render(htmlContent, chapterPath, options = {}) {
+    this.chapter = chapterPath;
+    this.cleanupBlobs();
     
-    // Clear previous blob URLs to prevent memory leaks
-    this.cleanupBlobURLs();
-    
-    // Apply theme and preferences
-    this.applyPreferences(options);
-    
-    // Process HTML content
-    const processedHtml = this.processHTML(html, options);
-    
-    // Create content wrapper
-    const contentWrapper = document.createElement('div');
-    contentWrapper.className = 'content-wrapper';
-    if (options.stripLegacyStyles) {
-      contentWrapper.classList.add('strip-legacy');
-    }
-    
-    contentWrapper.innerHTML = processedHtml;
-    
-    // Clear shadow DOM content (keep styles)
-    const styles = this.shadowRoot.querySelectorAll('style');
-    this.shadowRoot.innerHTML = '';
-    styles.forEach(style => this.shadowRoot.appendChild(style));
-    
-    // Add content
-    this.shadowRoot.appendChild(contentWrapper);
-    
-    // Setup link interception
-    this.setupLinkInterception(contentWrapper);
-    
-    // Notify content loaded
-    if (this.onContentLoad) {
-      this.onContentLoad();
-    }
+    const prefs = options.prefs || {};
+    this.applyPrefs(prefs);
+
+    const processed = this.processHTML(htmlContent, options);
+    const content = document.createElement('div');
+    content.className = `content${options.stripLegacyStyles ? ' strip-legacy' : ''}`;
+    content.innerHTML = processed;
+
+    // Clear shadow except styles
+    const styles = this.shadow.querySelectorAll('style');
+    this.shadow.innerHTML = '';
+    styles.forEach(s => this.shadow.appendChild(s));
+    this.shadow.appendChild(content);
+
+    this.setupLinkIntercept(content);
+    this.onLoad?.();
   }
 
-  /**
-   * Process HTML content
-   * @param {string} html - Raw HTML
-   * @param {Object} options - Processing options
-   * @returns {string} Processed HTML
-   */
   processHTML(html, options) {
-    let processed = html;
+    let result = html
+      .replace(/Ã—/g, '×').replace(/Ã©/g, 'é')
+      .replace(/â€"/g, '"').replace(/â€™/g, "'");
     
-    // Fix common encoding issues
-    processed = this.fixEncodingIssues(processed);
-    
-    // Normalize paths in src and href attributes
-    processed = this.normalizePaths(processed, options.basePath);
-    
-    return processed;
-  }
-
-  /**
-   * Fix common encoding issues in HTML
-   * @param {string} html - HTML content
-   * @returns {string} Fixed HTML
-   */
-  fixEncodingIssues(html) {
-    // Replace common mojibake patterns
-    const fixes = [
-      [/Ã—/g, '×'],
-      [/Ã©/g, 'é'],
-      [/Ã¨/g, 'è'],
-      [/Ã /g, 'à'],
-      [/â€"/g, '"'],
-      [/â€™/g, "'"],
-      [/â€"/g, '"'],
-      [/â€"/g, '"']
-    ];
-    
-    let result = html;
-    fixes.forEach(([pattern, replacement]) => {
-      result = result.replace(pattern, replacement);
-    });
-    
+    if (!result.includes('charset')) {
+      result = '<meta charset="UTF-8">' + result;
+    }
     return result;
   }
 
-  /**
-   * Normalize relative paths in HTML
-   * @param {string} html - HTML content
-   * @param {string} basePath - Base path for resolution
-   * @returns {string} HTML with normalized paths
-   */
-  normalizePaths(html, basePath = '') {
-    // This will be handled by link interception
-    // For now, just ensure meta charset is set
-    if (!html.includes('<meta') && !html.includes('charset')) {
-      html = '<meta charset="UTF-8">' + html;
-    }
-    
-    return html;
-  }
-
-  /**
-   * Setup link click interception
-   * @param {HTMLElement} container - Content container
-   */
-  setupLinkInterception(container) {
+  setupLinkIntercept(container) {
     container.addEventListener('click', (e) => {
       const link = e.target.closest('a[href]');
       if (!link) return;
       
       const href = link.getAttribute('href');
-      
-      // Check if it's an internal link
-      if (this.isInternalLink(href)) {
+      if (this.isInternal(href)) {
         e.preventDefault();
-        
-        if (this.onLinkClick) {
-          const resolvedPath = this.resolveInternalPath(href);
-          this.onLinkClick(resolvedPath);
-        }
+        this.onLink?.(this.resolvePath(href));
       }
-      // External links are allowed to open normally
     });
   }
 
-  /**
-   * Check if a link is internal
-   * @param {string} href - Link href
-   * @returns {boolean} True if internal
-   */
-  isInternalLink(href) {
+  isInternal(href) {
     if (!href) return false;
+    return !href.startsWith('http') && !href.startsWith('//') &&
+           !href.startsWith('#') && !href.startsWith('javascript:') &&
+           !href.startsWith('mailto:');
+  }
+
+  resolvePath(href) {
+    if (!this.chapter) return href;
+    const dir = this.chapter.substring(0, this.chapter.lastIndexOf('/') + 1);
     
-    // Ignore external links, anchors, javascript, mailto, etc.
-    if (href.startsWith('http://') || 
-        href.startsWith('https://') ||
-        href.startsWith('//') ||
-        href.startsWith('#') ||
-        href.startsWith('javascript:') ||
-        href.startsWith('mailto:')) {
-      return false;
+    if (href.startsWith('./')) return dir + href.slice(2);
+    if (href.startsWith('../')) {
+      const parent = dir.substring(0, dir.lastIndexOf('/'));
+      return parent + '/' + href.slice(3);
     }
-    
-    // Internal CHM links are typically relative paths
-    return true;
+    if (href.startsWith('/')) return href.slice(1);
+    return dir + href;
   }
 
-  /**
-   * Resolve internal path
-   * @param {string} href - Relative href
-   * @returns {string} Resolved path
-   */
-  resolveInternalPath(href) {
-    if (!this.currentChapter) return href;
-    
-    // Get directory of current chapter
-    const lastSlash = this.currentChapter.lastIndexOf('/');
-    const currentDir = lastSlash >= 0 ? 
-      this.currentChapter.substring(0, lastSlash + 1) : '';
-    
-    // Handle relative paths
-    if (href.startsWith('./')) {
-      return currentDir + href.substring(2);
-    } else if (href.startsWith('../')) {
-      // Go up one directory
-      const parentDir = currentDir.substring(0, currentDir.lastIndexOf('/'));
-      return parentDir + '/' + href.substring(3);
-    } else if (href.startsWith('/')) {
-      // Absolute path from root
-      return href.substring(1);
-    } else {
-      // Relative to current directory
-      return currentDir + href;
-    }
-  }
-
-  /**
-   * Apply user preferences to rendering
-   * @param {Object} options - Rendering options
-   */
-  applyPreferences(options) {
-    const prefs = appState.getPreferences();
-    const mergedOptions = { ...prefs, ...options };
-    
-    // Set CSS custom properties on shadow host
-    const host = this.shadowRoot.host;
-    
-    // Theme colors
-    const themeColors = this.getThemeColors(mergedOptions.theme);
-    host.style.setProperty('--text-color', themeColors.text);
-    host.style.setProperty('--bg-color', themeColors.bg);
-    host.style.setProperty('--link-color', themeColors.link);
-    
-    // Typography
-    host.style.setProperty('--content-width', mergedOptions.contentWidth);
-    host.style.setProperty('--font-size', `${mergedOptions.fontSize}px`);
-    host.style.setProperty('--line-height', mergedOptions.lineHeight);
-    host.style.setProperty('--letter-spacing', `${mergedOptions.letterSpacing}px`);
-    host.style.setProperty('--font-family', mergedOptions.fontFamily);
-  }
-
-  /**
-   * Get theme color scheme
-   * @param {string} theme - Theme name
-   * @returns {Object} Color values
-   */
-  getThemeColors(theme) {
+  applyPrefs(prefs) {
+    const host = this.shadow.host;
     const themes = {
-      light: {
-        text: '#333333',
-        bg: '#ffffff',
-        link: '#3498db'
-      },
-      sepia: {
-        text: '#5b4635',
-        bg: '#f4ecd8',
-        link: '#8b4513'
-      },
-      dark: {
-        text: '#e0e0e0',
-        bg: '#2c2c2c',
-        link: '#64b5f6'
-      },
-      oled: {
-        text: '#cccccc',
-        bg: '#000000',
-        link: '#4fc3f7'
-      }
+      light: { text: '#333', bg: '#fff', link: '#3498db' },
+      sepia: { text: '#5b4635', bg: '#f4ecd8', link: '#8b4513' },
+      dark: { text: '#e0e0e0', bg: '#2c2c2c', link: '#64b5f6' },
+      oled: { text: '#ccc', bg: '#000', link: '#4fc3f7' }
     };
+    const t = themes[prefs.theme] || themes.light;
     
-    return themes[theme] || themes.light;
+    host.style.setProperty('--text-color', t.text);
+    host.style.setProperty('--bg-color', t.bg);
+    host.style.setProperty('--link-color', t.link);
+    host.style.setProperty('--content-width', prefs.contentWidth);
+    host.style.setProperty('--font-size', `${prefs.fontSize}px`);
+    host.style.setProperty('--line-height', prefs.lineHeight);
+    host.style.setProperty('--font-family', prefs.fontFamily);
   }
 
-  /**
-   * Cleanup blob URLs to prevent memory leaks
-   */
-  cleanupBlobURLs() {
-    this.currentBlobURLs.forEach(url => {
-      URL.revokeObjectURL(url);
-    });
-    this.currentBlobURLs.clear();
+  registerBlob(url) {
+    this.blobURLs.add(url);
   }
 
-  /**
-   * Register a blob URL for cleanup
-   * @param {string} url - Blob URL
-   */
-  registerBlobURL(url) {
-    this.currentBlobURLs.add(url);
+  cleanupBlobs() {
+    this.blobURLs.forEach(u => URL.revokeObjectURL(u));
+    this.blobURLs.clear();
   }
 
-  /**
-   * Set link click handler
-   * @param {Function} handler - Click handler function
-   */
-  setOnLinkClick(handler) {
-    this.onLinkClick = handler;
-  }
-
-  /**
-   * Set content load handler
-   * @param {Function} handler - Load handler function
-   */
-  setOnContentLoad(handler) {
-    this.onContentLoad = handler;
-  }
-
-  /**
-   * Clear rendered content
-   */
   clear() {
-    this.cleanupBlobURLs();
-    if (this.shadowRoot) {
-      const styles = this.shadowRoot.querySelectorAll('style');
-      this.shadowRoot.innerHTML = '';
-      styles.forEach(style => this.shadowRoot.appendChild(style));
+    this.cleanupBlobs();
+    const styles = this.shadow?.querySelectorAll('style') || [];
+    if (this.shadow) {
+      this.shadow.innerHTML = '';
+      styles.forEach(s => this.shadow.appendChild(s));
     }
-    this.currentChapter = null;
+    this.chapter = null;
   }
 
-  /**
-   * Destroy renderer and cleanup
-   */
   destroy() {
     this.clear();
-    if (this.container && this.shadowRoot) {
-      this.container.removeChild(this.shadowRoot.host);
+    if (this.container && this.shadow) {
+      this.container.removeChild(this.shadow.host);
     }
-    this.container = null;
-    this.shadowRoot = null;
   }
 }

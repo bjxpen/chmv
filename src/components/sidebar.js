@@ -1,269 +1,201 @@
 /**
- * Sidebar Navigation Component
- * Handles TOC tree view, index, and search functionality
+ * Sidebar Component - TOC and Index navigation
+ * LitElement-based with declarative rendering
  */
+import { html, css } from 'lit';
+import { BaseComponent } from '../core/base-component.js';
 
-import { appState } from '../state/app-state.js';
+export class Sidebar extends BaseComponent {
+  static properties = {
+    collapsed: { type: Boolean },
+    activeTab: { type: String },
+    tocData: { type: Array },
+    indexData: { type: Array },
+    selectedPath: { type: String }
+  };
 
-export class Sidebar {
+  static styles = css`
+    :host { display: block; height: 100%; }
+    .sidebar {
+      display: flex; flex-direction: column; height: 100%;
+      background: #fff; border-right: 1px solid #dcdde1;
+      width: var(--sidebar-width, 280px);
+    }
+    .sidebar.collapsed { width: 0 !important; border: none; overflow: hidden; }
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.5rem; border-bottom: 1px solid #dcdde1;
+    }
+    .tabs { display: flex; gap: 0.25rem; }
+    .tab-btn {
+      padding: 0.4rem 0.75rem; border: none; background: transparent;
+      cursor: pointer; border-radius: 4px; font-size: 0.85rem;
+    }
+    .tab-btn:hover { background: #ecf0f1; }
+    .tab-btn.active { background: #3498db; color: white; }
+    .collapse-btn {
+      padding: 0.4rem; border: none; background: transparent;
+      cursor: pointer; border-radius: 4px;
+    }
+    .search { padding: 0.5rem; border-bottom: 1px solid #dcdde1; }
+    .search input {
+      width: 100%; padding: 0.5rem; border: 1px solid #dcdde1;
+      border-radius: 4px; font-size: 0.85rem;
+    }
+    .content { flex: 1; overflow-y: auto; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .toc-item { cursor: pointer; }
+    .toc-content {
+      display: flex; align-items: center; padding: 0.4rem 0.5rem; gap: 0.5rem;
+    }
+    .toc-content:hover { background: #ecf0f1; }
+    .toc-item.selected .toc-content { background: #3498db; color: white; }
+    .expand-btn, .spacer {
+      width: 16px; height: 16px; display: flex; align-items: center;
+      justify-content: center; border: none; background: transparent;
+      cursor: pointer; font-size: 10px;
+    }
+    .children { display: block; }
+    .children.collapsed { display: none; }
+    .index-list { padding: 0.5rem; }
+    .index-item {
+      padding: 0.4rem 0.5rem; cursor: pointer; border-radius: 4px;
+    }
+    .index-item:hover { background: #ecf0f1; }
+    .empty { padding: 1rem; text-align: center; color: #7f8c8d; }
+  `;
+
   constructor() {
-    this.container = null;
-    this.tocData = null;
-    this.indexData = null;
+    super();
+    this.collapsed = false;
     this.activeTab = 'toc';
-    this.onChapterSelect = null;
-    this.isCollapsed = false;
-    this.isResizing = false;
-  }
-
-  init(container) {
-    this.container = container;
-    this.render();
-    this.setupEventListeners();
-    this.setupResizer();
+    this.tocData = [];
+    this.indexData = [];
+    this.selectedPath = '';
+    this.onSelect = null;
+    this.searchQuery = '';
   }
 
   render() {
-    const prefs = appState.getPreferences();
-    
-    this.container.innerHTML = `
-      <div class="sidebar-container" style="width: ${prefs.sidebarWidth}px;">
-        <div class="sidebar-header">
-          <div class="sidebar-tabs">
-            <button class="tab-btn active" data-tab="toc" title="Table of Contents">TOC</button>
-            <button class="tab-btn" data-tab="index" title="Index">Index</button>
+    return html`
+      <div class="sidebar ${this.collapsed ? 'collapsed' : ''}">
+        <div class="header">
+          <div class="tabs">
+            <button class="tab-btn ${this.activeTab === 'toc' ? 'active' : ''}"
+              @click=${() => this.activeTab = 'toc'}>TOC</button>
+            <button class="tab-btn ${this.activeTab === 'index' ? 'active' : ''}"
+              @click=${() => this.activeTab = 'index'}>Index</button>
           </div>
-          <div class="sidebar-actions">
-            <button class="collapse-btn" title="Collapse Sidebar (B)">◀</button>
+          <button class="collapse-btn" @click=${this.toggleCollapse}>
+            ${this.collapsed ? '▶' : '◀'}
+          </button>
+        </div>
+        <div class="search">
+          <input type="text" placeholder="Search..." 
+            value=${this.searchQuery}
+            @input=${this.debounce((e) => { this.searchQuery = e.target.value; }, 200)} />
+        </div>
+        <div class="content">
+          <div class="panel ${this.activeTab === 'toc' ? 'active' : ''}">
+            ${this.renderTOC()}
+          </div>
+          <div class="panel ${this.activeTab === 'index' ? 'active' : ''}">
+            ${this.renderIndex()}
           </div>
         </div>
-        <div class="sidebar-search">
-          <input type="text" class="search-input" placeholder="Search chapters...">
-        </div>
-        <div class="sidebar-content">
-          <div class="toc-panel panel active" id="toc-panel"></div>
-          <div class="index-panel panel" id="index-panel"></div>
-        </div>
-        <div class="sidebar-resizer"></div>
       </div>
     `;
   }
 
-  setupEventListeners() {
-    this.container.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.switchTab(btn.dataset.tab);
-      });
-    });
-
-    this.container.querySelector('.collapse-btn').addEventListener('click', () => {
-      this.toggleCollapse();
-    });
-
-    const searchInput = this.container.querySelector('.search-input');
-    let debounceTimer;
-    searchInput.addEventListener('input', (e) => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        this.filterContent(e.target.value);
-      }, 200);
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'b' || e.key === 'B') {
-        this.toggleCollapse();
-      }
-    });
-  }
-
-  setupResizer() {
-    const resizer = this.container.querySelector('.sidebar-resizer');
-    const sidebarContainer = this.container.querySelector('.sidebar-container');
-    
-    resizer.addEventListener('mousedown', (e) => {
-      this.isResizing = true;
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!this.isResizing) return;
-      const newWidth = e.clientX;
-      if (newWidth >= 150 && newWidth <= 600) {
-        sidebarContainer.style.width = `${newWidth}px`;
-        appState.setPreference('sidebarWidth', newWidth);
-      }
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (this.isResizing) {
-        this.isResizing = false;
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-      }
-    });
-  }
-
-  switchTab(tab) {
-    this.activeTab = tab;
-    this.container.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tab === tab);
-    });
-    this.container.querySelectorAll('.panel').forEach(panel => {
-      panel.classList.toggle('active', panel.id === `${tab}-panel`);
-    });
-  }
-
-  toggleCollapse() {
-    this.isCollapsed = !this.isCollapsed;
-    const sidebarContainer = this.container.querySelector('.sidebar-container');
-    const collapseBtn = this.container.querySelector('.collapse-btn');
-    
-    if (this.isCollapsed) {
-      sidebarContainer.classList.add('collapsed');
-      collapseBtn.textContent = '▶';
-    } else {
-      sidebarContainer.classList.remove('collapsed');
-      collapseBtn.textContent = '◀';
+  renderTOC() {
+    if (!this.tocData?.length) {
+      return html`<div class="empty">No table of contents</div>`;
     }
-    appState.setPreference('sidebarVisible', !this.isCollapsed);
-  }
-
-  loadTOC(tocData) {
-    this.tocData = tocData;
-    const tocPanel = this.container.querySelector('#toc-panel');
-    
-    if (!tocData || tocData.length === 0) {
-      tocPanel.innerHTML = '<div class="empty-message">No table of contents found</div>';
-      return;
-    }
-    
-    tocPanel.innerHTML = this.renderTOCTree(tocData);
-    this.setupTOCInteractions(tocPanel);
+    return html`${this.renderTOCTree(this.filterTOC(this.tocData))}`;
   }
 
   renderTOCTree(items, level = 0) {
-    if (!items || items.length === 0) return '';
     const indent = level * 16;
-    
     return items.map(item => {
-      const hasChildren = item.children && item.children.length > 0;
-      return `
-        <div class="toc-item" data-path="${item.path || ''}" style="padding-left: ${indent}px">
-          <div class="toc-item-content">
-            ${hasChildren ? '<button class="toc-expand-btn">▶</button>' : '<span class="toc-spacer"></span>'}
-            <span class="toc-title">${this.escapeHtml(item.title || 'Untitled')}</span>
+      const hasChildren = item.children?.length > 0;
+      return html`
+        <div class="toc-item ${item.path === this.selectedPath ? 'selected' : ''}"
+          style="padding-left: ${indent}px">
+          <div class="toc-content" @click=${() => this.selectChapter(item.path)}>
+            ${hasChildren 
+              ? html`<button class="expand-btn" @click=${(e) => this.toggleExpand(e)}>▶</button>`
+              : html`<span class="spacer"></span>`}
+            <span class="title">${this.escapeHtml(item.title || 'Untitled')}</span>
           </div>
-          ${hasChildren ? `<div class="toc-children collapsed">${this.renderTOCTree(item.children, level + 1)}</div>` : ''}
+          ${hasChildren 
+            ? html`<div class="children collapsed">${this.renderTOCTree(item.children, level + 1)}</div>`
+            : ''}
         </div>
       `;
-    }).join('');
+    });
   }
 
-  setupTOCInteractions(panel) {
-    panel.querySelectorAll('.toc-expand-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const tocItem = btn.closest('.toc-item');
-        const children = tocItem.querySelector('.toc-children');
-        if (children) {
-          children.classList.toggle('collapsed');
-          btn.textContent = children.classList.contains('collapsed') ? '▶' : '▼';
-        }
-      });
-    });
+  renderIndex() {
+    if (!this.indexData?.length) {
+      return html`<div class="empty">No index found</div>`;
+    }
+    return html`
+      <div class="index-list">
+        ${this.filterIndex(this.indexData).map(entry => html`
+          <div class="index-item" @click=${() => this.selectChapter(entry.path)}>
+            <span>${this.escapeHtml(entry.keyword || 'Unknown')}</span>
+          </div>
+        `)}
+      </div>
+    `;
+  }
 
-    panel.querySelectorAll('.toc-item[data-path]').forEach(item => {
-      item.addEventListener('click', (e) => {
-        if (e.target.closest('.toc-expand-btn')) return;
-        const path = item.dataset.path;
-        if (path && this.onChapterSelect) {
-          this.selectChapter(path);
-        }
-      });
-    });
+  filterTOC(items) {
+    if (!this.searchQuery) return items;
+    const q = this.searchQuery.toLowerCase();
+    return items.filter(i => i.title?.toLowerCase().includes(q));
+  }
+
+  filterIndex(items) {
+    if (!this.searchQuery) return items;
+    const q = this.searchQuery.toLowerCase();
+    return items.filter(i => i.keyword?.toLowerCase().includes(q));
+  }
+
+  toggleExpand(e) {
+    e.stopPropagation();
+    const children = e.target.closest('.toc-item').querySelector('.children');
+    if (children) {
+      children.classList.toggle('collapsed');
+      e.target.textContent = children.classList.contains('collapsed') ? '▶' : '▼';
+    }
   }
 
   selectChapter(path) {
-    this.container.querySelectorAll('.toc-item.selected').forEach(item => {
-      item.classList.remove('selected');
-    });
-    
-    const selectedItem = this.container.querySelector(`.toc-item[data-path="${path}"]`);
-    if (selectedItem) {
-      selectedItem.classList.add('selected');
-      selectedItem.scrollIntoView({ block: 'nearest' });
-    }
-    
-    if (this.onChapterSelect) {
-      this.onChapterSelect(path);
-    }
+    this.selectedPath = path;
+    this.onSelect?.(path);
   }
 
-  loadIndex(indexData) {
-    this.indexData = indexData;
-    const indexPanel = this.container.querySelector('#index-panel');
-    
-    if (!indexData || indexData.length === 0) {
-      indexPanel.innerHTML = '<div class="empty-message">No index found</div>';
-      return;
-    }
-    
-    indexPanel.innerHTML = `
-      <div class="index-list">
-        ${indexData.map(entry => `
-          <div class="index-item" data-path="${entry.path || ''}">
-            <span class="index-keyword">${this.escapeHtml(entry.keyword || 'Unknown')}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
-    
-    indexPanel.querySelectorAll('.index-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const path = item.dataset.path;
-        if (path && this.onChapterSelect) {
-          this.onChapterSelect(path);
-        }
-      });
-    });
+  toggleCollapse() {
+    this.collapsed = !this.collapsed;
+    document.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: this.collapsed } }));
   }
 
-  filterContent(query) {
-    const lowerQuery = query.toLowerCase().trim();
-    
-    if (!lowerQuery) {
-      this.container.querySelectorAll('.toc-item, .index-item').forEach(item => {
-        item.style.display = '';
-      });
-      return;
-    }
-    
-    this.container.querySelectorAll('.toc-item').forEach(item => {
-      const title = item.querySelector('.toc-title')?.textContent || '';
-      item.style.display = title.toLowerCase().includes(lowerQuery) ? '' : 'none';
-    });
-    
-    this.container.querySelectorAll('.index-item').forEach(item => {
-      const keyword = item.querySelector('.index-keyword')?.textContent || '';
-      item.style.display = keyword.toLowerCase().includes(lowerQuery) ? '' : 'none';
-    });
+  loadTOC(data) {
+    this.tocData = data || [];
+    this.requestUpdate();
   }
 
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+  loadIndex(data) {
+    this.indexData = data || [];
+    this.requestUpdate();
   }
 
-  setOnChapterSelect(handler) {
-    this.onChapterSelect = handler;
-  }
-
-  destroy() {
-    this.container.innerHTML = '';
-    this.container = null;
-    this.tocData = null;
-    this.indexData = null;
+  select(path) {
+    this.selectedPath = path;
+    this.requestUpdate();
   }
 }
+
+customElements.define('chmv-sidebar', Sidebar);
