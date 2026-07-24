@@ -1,0 +1,27 @@
+{
+  "name": "chmv",
+  "version": "1.0.0",
+  "description": "Client-Side Web CHM Reader - Privacy-focused, offline-capable CHM file reader for legacy CJK novels and modern technical documentation",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .js"
+  },
+  "keywords": [
+    "chm",
+    "reader",
+    "web",
+    "offline",
+    "pwa",
+    "cjk",
+    "novel"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "eslint": "^8.56.0"
+  }
+}
