@@ -70,10 +70,9 @@ src/
 ```
 
 The store receives `{ createEngine, library, hashFile }` and the reader
-view connects its imperative capabilities (`renderChapter`,
-`getScrollState`, `reset`) back into the store — so every seam is
-swappable, which is exactly how the integration tests run the full
-open/navigate/resume flow in Node with fakes.
+view connects its imperative capabilities back into the store — so every
+seam is swappable. That’s how the tests can run the whole open/navigate/resume
+flow in Node using fakes.
 
 Libraries (~16 kB gzipped total added): [preact](https://preactjs.com) +
 [htm](https://github.com/developit/htm) (no-build declarative UI),
@@ -89,10 +88,21 @@ npm install
 npm run dev        # dev server
 npm run build      # production build (dist/)
 npm run preview    # serve the production build
+npm run singlepage # single-file build → dist-singlepage/index.html
 npm test           # all suites: unit, store, renderer, novel, extraction
 npm run lint       # eslint over src/ and test/
 node test/store-test.mjs   # store integration flow with fakes
 ```
+
+### Single-file version
+
+Want a version you can just double-click and open?
+
+```sh
+npm run singlepage
+```
+
+This produces `dist-singlepage/index.html` — everything (app + worker) is bundled into one file. It works great when opened directly from your filesystem (`file://`), no server needed. Perfect for sharing or keeping a portable copy.
 
 `test/extract-test.mjs` extracts every entry of a fixture CHM and can
 byte-compare against a directory produced by CHMLib's `extract_chmLib`
