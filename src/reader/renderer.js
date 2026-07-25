@@ -10,7 +10,7 @@
 
 'use strict';
 
-import { normalizePath, fragmentOf, isExternalHref, isTextPath } from '../engine/paths.js';
+import { normalizePath, fragmentOf, isExternalHref, isTextPath, isRenderablePath } from '../engine/paths.js';
 import { effectiveEncoding, decodeBytes } from '../engine/encodings.js';
 import { isDocWriteJs, docWriteToHtml, plainTextToHtml } from '../engine/noveljs.js';
 
@@ -196,44 +196,15 @@ export class Renderer {
 
   async _buildSection(path, bytes) {
     const raw = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-    const encoding = effectiveEncoding(raw, this.encodingOverride, this.bookEncoding);
-    let html = decodeBytes(raw, encoding);
-
-    /* script-driven novel chapters (.txt with document.write) and plain
-     * text files are converted to clean HTML before parsing */
-    if (isTextPath(path)) {
-      html = isDocWriteJs(html) ? docWriteToHtml(html) : plainTextToHtml(html);
-    }
-
-    const doc = new DOMParser().parseFromString(html, 'text/html');
 
     const section = document.createElement('section');
     section.className = 'doc';
     section.dataset.path = path;
-    section.dataset.encoding = encoding;
     const blobs = new Set();
     this.sectionBlobs.set(section, blobs);
 
-    /* collect document stylesheets before sanitization removes <link> */
-    const styleTexts = [];
-    if (!this.overrideStyles) {
-      for (const el of doc.querySelectorAll('style')) {
-        styleTexts.push({ css: el.textContent || '', base: path });
-      }
-      for (const el of doc.querySelectorAll('link[rel~="stylesheet" i][href]')) {
-        const cssPath = normalizePath(path, el.getAttribute('href'));
-        if (cssPath) styleTexts.push({ path: cssPath, base: cssPath });
-      }
-    }
-
-    this._sanitize(doc, path);
-
-    /* move body children into the section */
-    const body = doc.body || doc.documentElement;
-    while (body.firstChild) section.appendChild(body.firstChild);
-
-    /* resolve assets referenced from the content */
-    await this._resolveAssets(section, path, blobs);
+    const { fragment, styleTexts } = await this._buildContent(path, raw, blobs, 0);
+    section.appendChild(fragment);
 
     /* attach document styles (scoped by cascade: section styles live
      * inside the shadow root already) */
@@ -255,6 +226,94 @@ export class Renderer {
     }
 
     return section;
+  }
+
+  /**
+   * Decode, convert, sanitize and asset-resolve one document into a
+   * DocumentFragment. Recurses (depth-limited) into internal iframe /
+   * frame sources so legacy shell pages render their actual content
+   * inline instead of an empty frame.
+   */
+  async _buildContent(path, raw, blobs, depth) {
+    const encoding = effectiveEncoding(raw, this.encodingOverride, this.bookEncoding);
+    let html = decodeBytes(raw, encoding);
+
+    /* script-driven novel chapters (.txt with document.write) and plain
+     * text files are converted to clean HTML before parsing */
+    if (isTextPath(path)) {
+      html = isDocWriteJs(html) ? docWriteToHtml(html) : plainTextToHtml(html);
+    }
+
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    /* collect document stylesheets before sanitization removes <link> */
+    const styleTexts = [];
+
+    /* inline internal sub-frames before sanitization drops them */
+    await this._inlineFrames(doc, path, blobs, depth, styleTexts);
+
+    /* frameset docs: DOMParser puts <frameset> in the body slot; unwrap
+     * it into a plain container so inlined subframes survive sanitization */
+    for (const fs of [...doc.querySelectorAll('frameset')].reverse()) {
+      const div = doc.createElement('div');
+      while (fs.firstChild) div.appendChild(fs.firstChild);
+      fs.replaceWith(div);
+    }
+    if (!doc.body) {
+      const body = doc.createElement('body');
+      for (const child of [...doc.documentElement.children]) {
+        if (child.tagName !== 'HEAD' && child !== body) body.appendChild(child);
+      }
+      doc.documentElement.appendChild(body);
+    }
+    if (!this.overrideStyles) {
+      for (const el of doc.querySelectorAll('style')) {
+        styleTexts.push({ css: el.textContent || '', base: path });
+      }
+      for (const el of doc.querySelectorAll('link[rel~="stylesheet" i][href]')) {
+        const cssPath = normalizePath(path, el.getAttribute('href'));
+        if (cssPath) styleTexts.push({ path: cssPath, base: cssPath });
+      }
+    }
+
+    this._sanitize(doc, path);
+
+    const body = doc.body || doc.documentElement;
+    const fragment = document.createDocumentFragment();
+    while (body.firstChild) fragment.appendChild(body.firstChild);
+
+    /* resolve assets referenced from the content */
+    await this._resolveAssets(fragment, path, blobs);
+
+    return { fragment, styleTexts };
+  }
+
+  /**
+   * Replace internal <iframe>/<frame> elements with their (recursively
+   * built) content. Very common in legacy CJK novel shells and frameset
+   * technical docs, where the entry page is just a frame wrapper.
+   */
+  async _inlineFrames(doc, docPath, blobs, depth, styleTexts) {
+    if (depth >= 2) return; /* avoid cycles / pathological nesting */
+    const frames = [...doc.querySelectorAll('iframe[src], frame[src]')];
+    for (const frame of frames) {
+      const src = frame.getAttribute('src');
+      if (!src || isExternalHref(src)) continue;
+      const target = normalizePath(docPath, src);
+      if (!target || !isRenderablePath(target)) continue;
+      const asset = await this._fetchRaw(target);
+      if (!asset) continue;
+      try {
+        const { fragment, styleTexts: subStyles } = await this._buildContent(
+          target, new Uint8Array(asset.buffer), blobs, depth + 1);
+        styleTexts.push(...subStyles);
+        const wrapper = doc.createElement('div');
+        wrapper.className = 'subframe';
+        wrapper.dataset.path = target;
+        wrapper.appendChild(fragment);
+        frame.replaceWith(wrapper);
+      } catch { /* leave the frame; sanitizer will turn it into a link */ }
+    }
   }
 
   _sanitize(doc, docPath) {
@@ -304,9 +363,13 @@ export class Renderer {
   async _resolveAssets(rootEl, docPath, blobs) {
     const jobs = [];
 
+    /* subframe content was already resolved against its own base path
+     * during recursion — don't re-process it with the wrong base */
+    const inSubframe = (el) => el.closest && el.closest('.subframe') !== null;
+
     for (const img of rootEl.querySelectorAll('img[src], input[type="image"][src]')) {
       const src = img.getAttribute('src');
-      if (!src || isExternalHref(src)) continue;
+      if (!src || src.startsWith('blob:') || isExternalHref(src) || inSubframe(img)) continue;
       const assetPath = normalizePath(docPath, src);
       if (!assetPath) continue;
       img.removeAttribute('src');
@@ -337,6 +400,7 @@ export class Renderer {
 
     /* mark internal links for the click handler */
     for (const a of rootEl.querySelectorAll('a[href]')) {
+      if (a.dataset.internalHref) continue; /* already handled in a subframe pass */
       const href = a.getAttribute('href');
       if (!href) continue;
       if (isExternalHref(href)) {

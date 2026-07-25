@@ -95,5 +95,26 @@ inLink.dispatchEvent(new win.Event('click', { bubbles: true, cancelable: true })
 ok(navigated.length === 1 && navigated[0].path === '/index1/other.txt',
   `renderer: click routed through app (${JSON.stringify(navigated)})`);
 
+/* iframe shell inlining: /start.htm is nothing but an iframe wrapper
+ * around index1/index.htm — its content must be pulled inline */
+const startBytes = chm.retrieve(chm.resolve('/start.htm'));
+const s3 = await renderer.renderChapter('/start.htm', startBytes);
+const sub = s3.querySelector('.subframe');
+ok(sub && sub.dataset.path === '/index1/index.htm', 'renderer: iframe shell inlined');
+ok(/搜书吧/.test(s3.textContent), 'renderer: subframe CJK content present');
+const subLink = [...s3.querySelectorAll('a[data-internal-href]')]
+  .find((a) => /readall/i.test(a.dataset.internalHref || ''));
+ok(subLink && subLink.dataset.internalBase === '/index1/index.htm',
+  'renderer: subframe links resolve against subframe base');
+
+/* frameset technical-doc shell: content must survive sanitization */
+const framesetDoc = new TextEncoder().encode(
+  '<html><head><title>x</title></head><frameset cols="30%,*">' +
+  '<frame src="index1/volume.htm"><frame name="main"></frameset></html>');
+const s4 = await renderer.renderChapter('/frameset.htm', framesetDoc);
+ok(s4.querySelector('.subframe')?.dataset.path === '/index1/volume.htm',
+  'renderer: frameset frame inlined');
+ok(s4.querySelectorAll('frameset, frame').length === 0, 'renderer: no raw frameset residue');
+
 console.log(`renderer tests: ${passed} passed${process.exitCode ? ' (with failures)' : ''}`);
 process.exit(process.exitCode || 0);

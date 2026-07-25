@@ -87,4 +87,13 @@ const metaBytes = new TextEncoder().encode('<html><head><meta http-equiv="Conten
 ok(effectiveEncoding(metaBytes, null, 'utf-8') === 'gbk', 'enc: meta charset wins');
 ok(decodeEntities('&#x4F60;&#22909;&amp;') === '你好&', 'entities: numeric + named');
 
+/* ---------------- fallback TOC ---------------- */
+const { fallbackTocFromPaths } = await import('../src/engine/book.js');
+const flat = fallbackTocFromPaths(['/a.htm', '/b.htm']);
+ok(flat.length === 2 && flat[0].local === '/a.htm', 'fallback: single dir stays flat');
+const grouped = fallbackTocFromPaths(['/v1/c1.htm', '/v1/c2.htm', '/v2/c1.htm']);
+ok(grouped.length === 2 && grouped[0].name === 'v1' && grouped[0].children.length === 2,
+  'fallback: groups by directory');
+ok(grouped[1].children[0].local === '/v2/c1.htm', 'fallback: children navigable');
+
 console.log(`unit tests: ${passed} passed${process.exitCode ? ' (with failures)' : ''}`);

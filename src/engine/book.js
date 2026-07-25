@@ -86,11 +86,43 @@ const parseSitemapEntry = (chm, entry, encoding, mapper) => {
 };
 
 /**
+ * Fallback TOC for archives with no .hhc and no recognizable novel
+ * template: group documents by directory so thousands of flat files
+ * stay navigable (idea borrowed from the jules branch).
+ */
+export const fallbackTocFromPaths = (docPaths) => {
+  let nextId = 0;
+  const node = (name, local) => ({ id: nextId++, name, local, children: [] });
+  const nameOf = (p) => {
+    const base = p.split('/').pop();
+    return base.replace(/\.[^.]+$/, '') || base;
+  };
+
+  const byDir = new Map();
+  for (const p of docPaths) {
+    const dir = p.slice(0, p.lastIndexOf('/')) || '/';
+    if (!byDir.has(dir)) byDir.set(dir, []);
+    byDir.get(dir).push(p);
+  }
+  /* single directory → flat list */
+  if (byDir.size <= 1) return docPaths.map((p) => node(nameOf(p), p));
+
+  const tree = [];
+  for (const [dir, paths] of byDir) {
+    const label = dir === '/' ? '(root)' : dir.replace(/^\//, '');
+    const parent = node(label, null);
+    parent.children = paths.map((p) => node(nameOf(p), p));
+    tree.push(parent);
+  }
+  return tree;
+};
+
+/**
  * Build navigation (TOC tree + keyword index) with a given encoding.
  * Falls back to synthesized novel navigation when there is no usable
  * .hhc — covers script-driven 2000s CJK novel templates.
  */
-export const buildNav = (chm, sitemapEntries, encoding) => {
+export const buildNav = (chm, sitemapEntries, encoding, docPathsForFallback = null) => {
   const tocTree = parseSitemapEntry(chm, sitemapEntries.hhc, encoding, packTree);
   const indexList = parseSitemapEntry(chm, sitemapEntries.hhk, encoding, (tree, base) =>
     flattenIndex(tree).map(({ name, targets }) => ({
@@ -102,8 +134,12 @@ export const buildNav = (chm, sitemapEntries, encoding) => {
   if (!tocTree.length) {
     try { synthetic = synthesizeNovelNav(chm, encoding); } catch { /* keep null */ }
   }
+  let finalToc = synthetic ? synthetic.tocTree : tocTree;
+  if (!finalToc.length && docPathsForFallback && docPathsForFallback.length) {
+    finalToc = fallbackTocFromPaths(docPathsForFallback);
+  }
   return {
-    tocTree: synthetic ? synthetic.tocTree : tocTree,
+    tocTree: finalToc,
     indexList,
     syntheticDocPaths: synthetic ? synthetic.docPaths : null,
   };
@@ -139,7 +175,8 @@ export function openBook(chm, { encodingOverride = null, fileSize = 0 } = {}) {
   const detected = guessBookEncoding(chm, sample);
   const encoding = encodingOverride || detected.encoding;
 
-  const { tocTree, indexList, syntheticDocPaths } = buildNav(chm, sitemapEntries, encoding);
+  const { tocTree, indexList, syntheticDocPaths } =
+    buildNav(chm, sitemapEntries, encoding, htmlPaths);
 
   const titleBytes = sys.get(3);
   let title = null;

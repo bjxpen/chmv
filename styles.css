@@ -265,14 +265,28 @@ button { font: inherit; color: inherit; }
   min-width: 0;
 }
 
+.book-heading {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-left: 4px;
+  line-height: 1.25;
+}
 .book-title {
   font-weight: 600;
-  font-size: 14.5px;
+  font-size: 14px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
-  margin-left: 4px;
+}
+.book-subtitle {
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .icon-btn {
@@ -463,6 +477,11 @@ body.focus-mode .chapter-nav.top { display: none; }
 }
 .nav-btn:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
 .nav-btn:disabled { opacity: 0.35; cursor: default; }
+.nav-btn.labeled {
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .nav-pos {
   color: var(--fg-muted);
   font-size: 12.5px;
