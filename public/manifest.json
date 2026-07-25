@@ -1,0 +1,18 @@
+{
+  "name": "chmv - Client-Side Web CHM Reader",
+  "short_name": "chmv",
+  "description": "A 100% client-side, zero-upload CHM compiled help reader PWA.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#1a1a1a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
