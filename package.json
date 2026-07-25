@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node test/unit-test.mjs && node test/store-test.mjs && node test/renderer-test.mjs novel.chm && node test/novel-test.mjs novel.chm && node test/extract-test.mjs test/fixtures/putty.chm && node test/extract-test.mjs novel.chm",
-    "lint": "eslint src test"
+    "lint": "eslint src test",
+    "singlepage": "SINGLEFILE=1 vite build --outDir dist-singlepage"
   },
   "dependencies": {
     "@preact/signals": "^2.0.0",
@@ -23,6 +24,7 @@
     "eslint": "^10.8.0",
     "happy-dom": "^20.11.1",
     "vite": "^6.0.0",
-    "vite-plugin-pwa": "^0.21.0"
+    "vite-plugin-pwa": "^0.21.0",
+    "vite-plugin-singlefile": "^2.3.3"
   }
 }
