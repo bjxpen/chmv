@@ -100,7 +100,8 @@ export function ReadingView({
   };
 
   const resolveRelativeAssets = (doc: Document, baseRelPath: string) => {
-    const basePathDir = baseRelPath.substring(0, baseRelPath.lastIndexOf('/'));
+    const basePathDir = baseRelPath.includes('/') ? baseRelPath.substring(0, baseRelPath.lastIndexOf('/')) : '';
+    const parser = new DOMParser();
 
     // Resolve Images
     const imgs = Array.from(doc.querySelectorAll('img, image'));
@@ -131,6 +132,30 @@ export function ReadingView({
           const blobUrl = URL.createObjectURL(blob);
           blobUrlsRef.current.add(blobUrl);
           link.setAttribute('href', blobUrl);
+        } catch (e) {}
+      }
+    });
+
+    // Resolve nested IFRAMEs or FRAMEs (very common in wrapper index pages of legacy CJK novels)
+    const frames = Array.from(doc.querySelectorAll('iframe, frame'));
+    frames.forEach((frame) => {
+      const src = frame.getAttribute('src');
+      if (src && !src.startsWith('data:') && !src.startsWith('http') && !src.startsWith('blob:')) {
+        const resolvedPath = resolveRelativePath(basePathDir, src);
+        try {
+          const raw = chmReader.getRawBytes(resolvedPath);
+          let subHtmlText = chmReader.decodeText(raw, encoding);
+
+          const subDoc = parser.parseFromString(subHtmlText, 'text/html');
+          resolveRelativeAssets(subDoc, resolvedPath);
+          applyThemeAndTypographyOverrides(subDoc);
+          interceptLinks(subDoc, resolvedPath);
+
+          const subSerialized = new XMLSerializer().serializeToString(subDoc);
+          const blob = new Blob([subSerialized], { type: 'text/html' });
+          const blobUrl = URL.createObjectURL(blob);
+          blobUrlsRef.current.add(blobUrl);
+          frame.setAttribute('src', blobUrl);
         } catch (e) {}
       }
     });

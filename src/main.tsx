@@ -158,16 +158,45 @@ function App() {
   };
 
   const generateFallbackToc = (files: ChmFileEntry[]): SitemapNode[] => {
-    return files
-      .filter(f => f.path.match(/\.(html|htm)$/i))
-      .map(f => {
-        let title = f.path.split('/').pop() || f.path;
-        title = title.replace(/\.(html|htm)$/i, '').replace(/_/g, ' ');
-        return {
-          name: title,
-          local: f.path
-        };
-      });
+    const root: SitemapNode = { name: 'Root', children: [] };
+
+    // Filter for HTML documents
+    const htmlFiles = files.filter(f => f.path.match(/\.(html|htm)$/i));
+
+    // Sort files naturally by path
+    htmlFiles.sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true, sensitivity: 'base' }));
+
+    for (const file of htmlFiles) {
+      const parts = file.path.split('/');
+      let currentLevel = root.children!;
+
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const isFile = i === parts.length - 1;
+
+        const cleanName = part.replace(/\.(html|htm)$/i, '').replace(/_/g, ' ');
+
+        if (isFile) {
+          currentLevel.push({
+            name: cleanName,
+            local: file.path
+          });
+        } else {
+          // Folder part, find or create
+          let folderNode = currentLevel.find(n => n.name === cleanName && !n.local);
+          if (!folderNode) {
+            folderNode = {
+              name: cleanName,
+              children: []
+            };
+            currentLevel.push(folderNode);
+          }
+          currentLevel = folderNode.children!;
+        }
+      }
+    }
+
+    return root.children!;
   };
 
   const handleRecentSelected = (hash: string) => {
