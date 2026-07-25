@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "node test/unit-test.mjs && node test/store-test.mjs && node test/renderer-test.mjs novel.chm && node test/novel-test.mjs novel.chm && node test/extract-test.mjs test/fixtures/putty.chm && node test/extract-test.mjs novel.chm",
     "lint": "eslint src test",
-    "singlepage": "cross-env SINGLEFILE=1 vite build --outDir dist-singlepage"
+    "standalone": "cross-env STANDALONE=1 vite build --outDir dist-standalone"
   },
   "dependencies": {
     "@preact/signals": "^2.0.0",
@@ -22,6 +22,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "cross-env": "^10.1.0",
+    "esbuild": "^0.28.1",
     "eslint": "^10.8.0",
     "happy-dom": "^20.11.1",
     "vite": "^6.0.0",

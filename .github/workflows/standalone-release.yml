@@ -1,4 +1,4 @@
-name: Single-page Release
+name: Standalone Release
 
 on:
   workflow_dispatch:
@@ -25,28 +25,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build single-page HTML
-        run: npm run singlepage
+      - name: Build standalone HTML
+        run: STANDALONE=1 npm run standalone
 
-      - name: Zip the single-page build (with assets)
+      - name: Zip the standalone build (with assets)
         run: |
-          cd dist-singlepage
-          zip -r ../chmv-singlepage.zip .
+          cd dist-standalone
+          zip -r ../chmv-standalone.zip .
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: chmv ${{ github.ref_name }} (single-page)
+          name: chmv ${{ github.ref_name }} (standalone)
           body: |
-            Self-contained single-file version of chmv.
+            Self-contained standalone version of chmv.
             
-            - Download `chmv-singlepage.zip`
-            - Unzip — open `index.html` from the folder
+            - Download `chmv-standalone.zip`
+            - Unzip the folder and open `index.html`
             - Works directly from your filesystem (no server needed)
             - Includes the main HTML + any supporting assets
           files: |
-            chmv-singlepage.zip
+            chmv-standalone.zip
           draft: false
           prerelease: false
         env:
