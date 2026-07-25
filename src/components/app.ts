@@ -48,7 +48,7 @@ export function App({ state, onOpenFile, onNavigate, onToggleSidebar }: AppProps
   return h('div', { 
     class: 'app',
     'data-theme': reader.themeId,
-    style: cssVars as unknown as string
+    style: cssVars
   }, [
     Header({ state, onToggleSidebar }),
     hasFile 

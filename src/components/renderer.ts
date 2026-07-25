@@ -49,7 +49,8 @@ export class Renderer {
 
     const vnodeObj = vnode as VNode;
     const { type, props } = vnodeObj;
-    const children = vnodeObj.children;
+    // Children can be in props.children or directly on vnode
+    const children = (props && 'children' in props) ? (props as any).children : vnodeObj.children;
 
     // Function component
     if (typeof type === 'function') {

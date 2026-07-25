@@ -57,16 +57,13 @@ class CHMReaderApp {
   }
 
   private render(state: AppState): void {
-    console.log('Rendering with state:', state.reader.chmFile ? 'file loaded' : 'no file');
     const vnode = App({
       state,
       onOpenFile: (file) => this.handleFileOpen(file),
       onNavigate: (path) => this.handleNavigate(path),
       onToggleSidebar: () => store.dispatch(reader.toggleSidebar(!state.reader.sidebarVisible))
     });
-    console.log('VNode:', vnode);
     this.renderer.render(vnode);
-    console.log('Render complete');
   }
 
   private setupKeyboardShortcuts(): void {
