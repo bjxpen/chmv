@@ -1,11 +1,27 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteSingleFile } from 'vite-plugin-singlefile';
+import fs from 'fs';
+import path from 'path';
+import { buildSync } from 'esbuild';
 
 export default defineConfig({
   base: './',
   build: { target: 'es2022' },
   worker: { format: 'es' },
+  define: process.env.SINGLEFILE
+    ? {
+        __CHM_WORKER_SRC__: JSON.stringify(
+          buildSync({
+            entryPoints: [path.resolve(__dirname, 'src/services/chm.worker.js')],
+            bundle: true,
+            format: 'iife',
+            platform: 'browser',
+            write: false,
+          }).outputFiles[0].text,
+        ),
+      }
+    : {},
   plugins: [
     // singlefile build only when explicitly requested via env
     ...(process.env.SINGLEFILE

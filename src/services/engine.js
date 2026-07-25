@@ -34,7 +34,17 @@ import * as Comlink from 'comlink';
 
 /** @returns {ChmEngine} */
 export function createEngine() {
-  const worker = new Worker(new URL('./chm.worker.js', import.meta.url), { type: 'module' });
+  // In single-file builds we embed the worker source as a string (injected by Vite define)
+  // so it can be turned into a Blob URL and still work from file://
+  const workerSrc = typeof __CHM_WORKER_SRC__ !== 'undefined' ? __CHM_WORKER_SRC__ : null;
+
+  let worker;
+  if (workerSrc) {
+    const blob = new Blob([workerSrc], { type: 'text/javascript' });
+    worker = new Worker(URL.createObjectURL(blob)); // classic worker (IIFE)
+  } else {
+    worker = new Worker(new URL('./chm.worker.js', import.meta.url), { type: 'module' });
+  }
   const proxy = Comlink.wrap(worker);
   return {
     open: (file, encoding = null) => proxy.open(file, encoding),

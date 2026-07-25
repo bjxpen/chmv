@@ -1,0 +1,52 @@
+name: Single-page Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build single-page HTML
+        run: npm run singlepage
+
+      - name: Zip the single-page build
+        run: |
+          cd dist-singlepage
+          zip -r ../chmv-singlepage.zip index.html
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: chmv ${{ github.ref_name }} (single-page)
+          body: |
+            Self-contained single-file version of chmv.
+            
+            - Just download `chmv-singlepage.zip`
+            - Unzip and open `index.html` — works from your filesystem
+            - No server or install required
+          files: |
+            chmv-singlepage.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
