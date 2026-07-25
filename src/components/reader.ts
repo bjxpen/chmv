@@ -24,21 +24,7 @@ export function Reader({ state, onNavigate }: ReaderProps): VNodeChild {
   const prevChapter = currentIdx > 0 ? flatTOC[currentIdx - 1] : null;
   const nextChapter = currentIdx >= 0 && currentIdx < flatTOC.length - 1 ? flatTOC[currentIdx + 1] : null;
 
-  return h('main', { class: 'reader-container' }, [
-    // Top navigation
-    h('div', { class: 'reader-nav reader-nav-top' }, [
-      prevChapter 
-        ? h('button', { class: 'nav-btn', onClick: () => onNavigate(prevChapter!.path) }, [
-            ICONS.arrowLeft, ' Previous'
-          ])
-        : h('span', {}),
-      nextChapter 
-        ? h('button', { class: 'nav-btn', onClick: () => onNavigate(nextChapter!.path) }, [
-            'Next ', ICONS.arrowRight
-          ])
-        : h('span', {})
-    ]),
-    
+  return h('div', { class: 'reader' }, [
     // Content
     h('div', { class: 'reader-content' }, [
       h('iframe', {
@@ -50,26 +36,22 @@ export function Reader({ state, onNavigate }: ReaderProps): VNodeChild {
     ]),
     
     // Bottom navigation
-    h('div', { class: 'reader-nav reader-nav-bottom' }, [
+    h('div', { class: 'chapter-nav' }, [
       prevChapter 
-        ? h('button', { class: 'nav-btn', onClick: () => onNavigate(prevChapter!.path) }, [
-            ICONS.arrowLeft, ' Previous'
-          ])
+        ? h('button', { class: 'btn btn-secondary', onClick: () => onNavigate(prevChapter!.path) }, ['Previous'])
         : h('span', {}),
       h('div', { class: 'font-controls' }, [
         h('button', { 
-          class: 'font-btn', 
+          class: 'btn btn-secondary', 
           onClick: () => store.dispatch(typography.fontSize(reader.typography.fontSize - 1))
         }, ['A-']),
         h('button', { 
-          class: 'font-btn', 
+          class: 'btn btn-secondary', 
           onClick: () => store.dispatch(typography.fontSize(reader.typography.fontSize + 1))
         }, ['A+'])
       ]),
       nextChapter 
-        ? h('button', { class: 'nav-btn', onClick: () => onNavigate(nextChapter!.path) }, [
-            'Next ', ICONS.arrowRight
-          ])
+        ? h('button', { class: 'btn btn-secondary', onClick: () => onNavigate(nextChapter!.path) }, ['Next'])
         : h('span', {})
     ])
   ]);

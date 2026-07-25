@@ -26,18 +26,27 @@ declare global {
 
 class CHMReaderApp {
   private renderer: Renderer;
-  private appElement: HTMLElement;
+  private appElement: HTMLElement | null;
 
   constructor() {
-    this.appElement = document.getElementById('app')!;
+    this.appElement = document.getElementById('app');
+    console.log('App element:', this.appElement);
+    if (!this.appElement) {
+      console.error('Could not find #app element');
+      return;
+    }
     this.renderer = new Renderer(this.appElement);
     this.init();
   }
 
   async init(): Promise<void> {
+    console.log('Initializing store...');
     await store.initialize();
+    console.log('Store initialized');
     store.subscribe((state) => this.render(state));
+    console.log('Subscribed to store');
     this.render(store.getState());
+    console.log('Initial render done');
     this.setupKeyboardShortcuts();
     window.addEventListener('error', (e) => console.error('Error:', e.error));
     window.addEventListener('unhandledrejection', (e) => console.error('Reject:', e.reason));
@@ -48,13 +57,16 @@ class CHMReaderApp {
   }
 
   private render(state: AppState): void {
+    console.log('Rendering with state:', state.reader.chmFile ? 'file loaded' : 'no file');
     const vnode = App({
       state,
       onOpenFile: (file) => this.handleFileOpen(file),
       onNavigate: (path) => this.handleNavigate(path),
       onToggleSidebar: () => store.dispatch(reader.toggleSidebar(!state.reader.sidebarVisible))
     });
+    console.log('VNode:', vnode);
     this.renderer.render(vnode);
+    console.log('Render complete');
   }
 
   private setupKeyboardShortcuts(): void {

@@ -46,17 +46,17 @@ export function App({ state, onOpenFile, onNavigate, onToggleSidebar }: AppProps
   };
 
   return h('div', { 
-    class: 'app-container',
+    class: 'app',
     'data-theme': reader.themeId,
     style: cssVars as unknown as string
   }, [
     Header({ state, onToggleSidebar }),
     hasFile 
-      ? h('div', { class: 'app-main', style: 'display: flex; flex: 1; overflow: hidden;' }, [
+      ? h('div', { class: 'main-content', style: 'display: flex; flex: 1; overflow: hidden;' }, [
           Sidebar({ state, onNavigate }),
           Reader({ state, onNavigate })
         ])
-      : h('div', { class: 'welcome-screen', style: 'flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 24px;' }, [
+      : h('div', { style: 'flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 24px;' }, [
           DropZone({ onFileSelect: onOpenFile }),
           RecentFiles({ files: state.recentFiles, onOpenFile })
         ]),

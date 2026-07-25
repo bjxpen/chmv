@@ -15,7 +15,7 @@ interface RecentFilesProps {
 
 export function RecentFiles({ files }: RecentFilesProps): VNodeChild {
   return when(files.length > 0, h('div', { class: 'recent-files' }, [
-    h('h3', { class: 'section-title' }, ['Recent Files']),
+    h('h3', { class: 'recent-files-title' }, ['Recent Files']),
     h('div', { class: 'recent-list' }, 
       each(files.slice(0, 10), (file) => RecentFileItem({ file }))
     )
@@ -27,21 +27,15 @@ interface RecentFileItemProps {
 }
 
 function RecentFileItem({ file }: RecentFileItemProps): VNodeChild {
-  return h('div', { class: 'recent-item' }, [
-    h('span', { innerHTML: ICONS.file }),
-    h('div', { class: 'recent-info' }, [
-      h('span', { class: 'recent-name' }, [file.name]),
-      h('span', { class: 'recent-meta' }, [
+  return h('div', { class: 'recent-file-item' }, [
+    h('span', { class: 'recent-file-icon', innerHTML: ICONS.file }),
+    h('div', { class: 'recent-file-info' }, [
+      h('span', { class: 'recent-file-name' }, [file.name]),
+      h('span', { class: 'recent-file-meta' }, [
         formatSize(file.size),
         ' • ',
         formatRelativeTime(file.lastAccessed)
       ])
-    ]),
-    h('div', { class: 'recent-progress' }, [
-      h('div', { 
-        class: 'progress-bar',
-        style: { width: `${file.completion}%` }
-      })
     ])
   ]);
 }

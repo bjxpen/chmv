@@ -30,19 +30,17 @@ export function DropZone({ onFileSelect }: DropZoneProps): VNodeChild {
     onDragOver: (e: DragEvent) => e.preventDefault(),
     onDrop: handleDrop
   }, [
-    h('div', { class: 'drop-zone-content' }, [
-      ICONS.uploadCloud,
-      h('h2', {}, ['Drop CHM file here']),
-      h('p', { class: 'drop-hint' }, ['or']),
-      h('label', { class: 'file-btn' }, [
-        h('input', {
-          type: 'file',
-          accept: '.chm',
-          style: 'display: none',
-          onChange: handleFileInput
-        }),
-        'Browse Files'
-      ])
+    h('div', { class: 'drop-zone-icon', innerHTML: ICONS.uploadCloud }),
+    h('h2', { class: 'drop-zone-title' }, ['Drop CHM file here']),
+    h('p', { class: 'drop-zone-subtitle' }, ['or']),
+    h('label', { class: 'btn btn-primary' }, [
+      h('input', {
+        type: 'file',
+        accept: '.chm',
+        style: 'display: none',
+        onChange: handleFileInput
+      }),
+      'Browse Files'
     ])
   ]);
 }

@@ -17,23 +17,15 @@ export function Header({ state, onToggleSidebar }: HeaderProps): VNodeChild {
   const hasFile = !!reader.chmFile;
   const fileName = reader.chmFile?.name ?? 'CHM Reader';
 
-  return h('header', { class: 'app-header' }, [
-    h('div', { class: 'header-left' }, [
-      h('button', {
-        class: 'icon-btn',
+  return h('header', { class: 'header' }, [
+    h('div', { class: 'header-title' }, [fileName]),
+    h('div', { class: 'header-controls' }, [
+      hasFile && h('button', {
+        class: 'btn-icon',
         title: 'Toggle Sidebar',
+        innerHTML: ICONS.menu,
         onClick: onToggleSidebar
-      }, [ICONS.menu])
-    ]),
-    h('div', { class: 'header-center' }, [
-      hasFile 
-        ? h('span', { class: 'file-name' }, [fileName])
-        : h('h1', { class: 'app-title' }, ['CHM Reader'])
-    ]),
-    h('div', { class: 'header-right' }, [
-      hasFile && h('div', { class: 'chapter-nav' }, [
-        h('span', { class: 'chapter-name' }, [reader.currentChapter?.split('/').pop() ?? ''])
-      ])
+      })
     ])
   ]);
 }

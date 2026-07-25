@@ -20,18 +20,18 @@ export function SettingsPanel({ state }: SettingsPanelProps): VNodeChild {
 
   if (!sidebarVisible) return null;
 
-  return h('div', { class: 'settings-panel' }, [
+  return h('div', { class: 'settings-panel open' }, [
     h('div', { class: 'settings-header' }, [
-      h('h3', {}, ['Settings']),
-      h('button', { class: 'icon-btn', innerHTML: ICONS.x, onClick: () => store.dispatch(reader.toggleSidebar(false)) })
+      h('h3', { class: 'settings-title' }, ['Settings']),
+      h('button', { class: 'btn-icon', innerHTML: ICONS.x, onClick: () => store.dispatch(reader.toggleSidebar(!readerState.sidebarVisible)) })
     ]),
     h('div', { class: 'settings-content' }, [
       // Encoding
       h('section', { class: 'settings-section' }, [
-        h('h4', {}, ['Encoding']),
-        h('div', { class: 'setting-row' }, [
+        h('h4', { class: 'settings-section-title' }, ['Encoding']),
+        h('div', { class: 'settings-row' }, [
           h('select', {
-            class: 'setting-select',
+            class: 'settings-select',
             value: encoding,
             onChange: (e: Event) => store.dispatch(reader.setEncoding((e.target as HTMLSelectElement).value as EncodingType))
           }, 
@@ -42,10 +42,10 @@ export function SettingsPanel({ state }: SettingsPanelProps): VNodeChild {
       
       // Theme
       h('section', { class: 'settings-section' }, [
-        h('h4', {}, ['Theme']),
+        h('h4', { class: 'settings-section-title' }, ['Theme']),
         h('div', { class: 'theme-grid' }, 
           each(Object.values(THEMES), (theme) => h('button', {
-            class: `theme-btn ${theme.id === themeId ? 'active' : ''}`,
+            class: `theme-option ${theme.id === themeId ? 'active' : ''}`,
             style: { background: theme.background, color: theme.text },
             onClick: () => store.dispatch(reader.setTheme(theme.id as ThemeId))
           }, [theme.name]))
@@ -54,33 +54,36 @@ export function SettingsPanel({ state }: SettingsPanelProps): VNodeChild {
       
       // Typography
       h('section', { class: 'settings-section' }, [
-        h('h4', {}, ['Typography']),
-        h('div', { class: 'setting-row' }, [
-          h('label', {}, ['Font Size']),
+        h('h4', { class: 'settings-section-title' }, ['Typography']),
+        h('div', { class: 'settings-row' }, [
+          h('label', { class: 'settings-label' }, ['Font Size']),
           h('input', {
             type: 'range',
+            class: 'settings-slider',
             min: '10',
             max: '32',
             value: String(typo.fontSize),
             onInput: (e: Event) => store.dispatch(typography.fontSize(Number((e.target as HTMLInputElement).value)))
           }),
-          h('span', { class: 'setting-value' }, [`${typo.fontSize}px`])
+          h('span', {}, [`${typo.fontSize}px`])
         ]),
-        h('div', { class: 'setting-row' }, [
-          h('label', {}, ['Line Height']),
+        h('div', { class: 'settings-row' }, [
+          h('label', { class: 'settings-label' }, ['Line Height']),
           h('input', {
             type: 'range',
+            class: 'settings-slider',
             min: '1',
             max: '3',
             step: '0.1',
             value: String(typo.lineHeight),
             onInput: (e: Event) => store.dispatch(typography.lineHeight(Number((e.target as HTMLInputElement).value)))
           }),
-          h('span', { class: 'setting-value' }, [String(typo.lineHeight)])
+          h('span', {}, [String(typo.lineHeight)])
         ]),
-        h('div', { class: 'setting-row' }, [
-          h('label', {}, ['Font Family']),
+        h('div', { class: 'settings-row' }, [
+          h('label', { class: 'settings-label' }, ['Font Family']),
           h('select', {
+            class: 'settings-select',
             value: typo.fontFamily,
             onChange: (e: Event) => store.dispatch(typography.fontFamily((e.target as HTMLSelectElement).value as FontFamily))
           }, [
@@ -89,9 +92,10 @@ export function SettingsPanel({ state }: SettingsPanelProps): VNodeChild {
             h('option', { value: 'kai-ti' }, ['KaiTi'])
           ])
         ]),
-        h('div', { class: 'setting-row' }, [
-          h('label', {}, ['Container Width']),
+        h('div', { class: 'settings-row' }, [
+          h('label', { class: 'settings-label' }, ['Container Width']),
           h('select', {
+            class: 'settings-select',
             value: String(typo.containerWidth),
             onChange: (e: Event) => store.dispatch(typography.containerWidth((e.target as HTMLSelectElement).value as unknown as ContainerWidth))
           }, [

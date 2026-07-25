@@ -30,7 +30,7 @@ export function Sidebar({ state, onNavigate }: SidebarProps): VNodeChild {
       })
     ]),
     h('div', { class: 'sidebar-content' }, [
-      h('nav', { class: 'toc-nav' }, 
+      h('ul', { class: 'toc-tree' }, 
         each(tocEntries, (entry) => TOCItem({ entry, currentChapter, onNavigate }))
       )
     ])
@@ -47,15 +47,14 @@ function TOCItem({ entry, currentChapter, onNavigate }: TOCItemProps): VNodeChil
   const isActive = entry.path === currentChapter;
   const hasChildren = entry.children.length > 0;
 
-  return h('div', { class: 'toc-item' }, [
+  return h('li', { class: 'toc-item' }, [
     h('div', {
-      class: `toc-entry ${isActive ? 'active' : ''}`,
+      class: `toc-item-header ${isActive ? 'active' : ''}`,
       onClick: () => entry.path && onNavigate(entry.path)
     }, [
-      when(hasChildren, h('span', { innerHTML: ICONS.chevronRight })),
       entry.path ? h('span', { class: 'toc-name' }, [entry.name]) : h('span', { class: 'toc-name toc-folder' }, [entry.name])
     ]),
-    when(hasChildren, h('div', { class: 'toc-children' }, 
+    when(hasChildren, h('ul', { class: 'toc-children' }, 
       each(entry.children, (child) => TOCItem({ entry: child, currentChapter, onNavigate }))
     ))
   ]);
