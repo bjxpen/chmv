@@ -10,8 +10,9 @@
 
 'use strict';
 
-import { normalizePath, fragmentOf, isExternalHref } from '../engine/paths.js';
+import { normalizePath, fragmentOf, isExternalHref, isTextPath } from '../engine/paths.js';
 import { effectiveEncoding, decodeBytes } from '../engine/encodings.js';
+import { isDocWriteJs, docWriteToHtml, plainTextToHtml } from '../engine/noveljs.js';
 
 const DROP_TAGS = new Set([
   'script', 'object', 'embed', 'applet', 'iframe', 'frame', 'frameset',
@@ -196,7 +197,13 @@ export class Renderer {
   async _buildSection(path, bytes) {
     const raw = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     const encoding = effectiveEncoding(raw, this.encodingOverride, this.bookEncoding);
-    const html = decodeBytes(raw, encoding);
+    let html = decodeBytes(raw, encoding);
+
+    /* script-driven novel chapters (.txt with document.write) and plain
+     * text files are converted to clean HTML before parsing */
+    if (isTextPath(path)) {
+      html = isDocWriteJs(html) ? docWriteToHtml(html) : plainTextToHtml(html);
+    }
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
@@ -251,6 +258,21 @@ export class Renderer {
   }
 
   _sanitize(doc, docPath) {
+    /* legacy frame shells: replace iframe/frame with a link to the target
+     * document instead of silently dropping it (common CHM entry pages
+     * are nothing but an <iframe src="index.htm">) */
+    for (const frame of doc.querySelectorAll('iframe[src], frame[src]')) {
+      const src = frame.getAttribute('src');
+      if (src && !isExternalHref(src)) {
+        const p = doc.createElement('p');
+        const a = doc.createElement('a');
+        a.setAttribute('href', src);
+        a.textContent = `→ ${src}`;
+        p.appendChild(a);
+        frame.replaceWith(p);
+      }
+    }
+
     /* remove dangerous / irrelevant elements entirely */
     const selector = [...DROP_TAGS].join(',');
     for (const el of doc.querySelectorAll(selector)) el.remove();
