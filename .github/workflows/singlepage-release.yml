@@ -28,10 +28,10 @@ jobs:
       - name: Build single-page HTML
         run: npm run singlepage
 
-      - name: Zip the single-page build
+      - name: Zip the single-page build (with assets)
         run: |
           cd dist-singlepage
-          zip -r ../chmv-singlepage.zip index.html
+          zip -r ../chmv-singlepage.zip .
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -41,9 +41,10 @@ jobs:
           body: |
             Self-contained single-file version of chmv.
             
-            - Just download `chmv-singlepage.zip`
-            - Unzip and open `index.html` — works from your filesystem
-            - No server or install required
+            - Download `chmv-singlepage.zip`
+            - Unzip — open `index.html` from the folder
+            - Works directly from your filesystem (no server needed)
+            - Includes the main HTML + any supporting assets
           files: |
             chmv-singlepage.zip
           draft: false
