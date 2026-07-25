@@ -63,17 +63,22 @@ export function createStore({ createEngine, library, hashFile }) {
     }, ms);
   };
 
-  const tocLabelOf = (path) => {
-    const find = (nodes) => {
-      for (const n of nodes) {
-        if (n.local && n.local.toLowerCase() === path.toLowerCase()) return n.name;
-        const hit = find(n.children);
-        if (hit) return hit;
+  const labelByLocal = computed(() => {
+    const map = new Map();
+    const walk = (nodes) => nodes.forEach((n) => {
+      if (n.local) {
+        const k = n.local.toLowerCase();
+        if (!map.has(k)) map.set(k, n.name);
       }
-      return null;
-    };
-    return find(toc.value.tocTree) || path.split('/').pop();
-  };
+      walk(n.children);
+    });
+    walk(toc.value.tocTree);
+    return map;
+  });
+
+  const tocLabelOf = (path) =>
+    (path && labelByLocal.value.get(path.toLowerCase())) ||
+    (path ? path.split('/').pop() : '');
 
   const buildSpine = (info) => {
     const seen = new Set();
@@ -208,10 +213,15 @@ export function createStore({ createEngine, library, hashFile }) {
       return;
     }
     if (!asset.isHtml) {
-      /* non-HTML target (image, txt, …): open standalone */
-      const url = URL.createObjectURL(new Blob([asset.buffer], { type: asset.mime }));
-      window.open(url, '_blank', 'noopener');
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      /* non-renderable target: images open standalone, the rest is
+       * offered as a download-style tab only when the browser can show it */
+      if (/^(image|text|application\/pdf)/.test(asset.mime || '')) {
+        const url = URL.createObjectURL(new Blob([asset.buffer], { type: asset.mime }));
+        window.open(url, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } else {
+        notify(`Can't display ${path.split('/').pop()} (${asset.mime || 'binary'}).`);
+      }
       loading.value = null;
       return;
     }

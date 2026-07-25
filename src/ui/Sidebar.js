@@ -144,7 +144,14 @@ const IndexPanel = ({ items, filterText, onSelect }) => {
 export const Sidebar = ({ store }) => {
   const [tab, setTab] = useState('toc');
   const [filterText, setFilterText] = useState('');
+  const [needle, setNeedle] = useState('');
   const { tocTree, indexList } = store.toc.value;
+
+  /* debounce the filter so big trees don't re-render on every keystroke */
+  useEffect(() => {
+    const t = setTimeout(() => setNeedle(filterText), 120);
+    return () => clearTimeout(t);
+  }, [filterText]);
 
   const onSelect = (local) => {
     store.navigateTo(local);
@@ -169,8 +176,8 @@ export const Sidebar = ({ store }) => {
       <div class="sidebar-panel" role="tabpanel">
         ${tab === 'toc'
           ? html`<${TocPanel} tree=${tocTree} activeLocal=${store.activeTocPath.value}
-                              filterText=${filterText} onSelect=${onSelect} />`
-          : html`<${IndexPanel} items=${indexList} filterText=${filterText} onSelect=${onSelect} />`}
+                              filterText=${needle} onSelect=${onSelect} />`
+          : html`<${IndexPanel} items=${indexList} filterText=${needle} onSelect=${onSelect} />`}
       </div>
     </aside>`;
 };

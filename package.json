@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node test/unit-test.mjs && node test/store-test.mjs && node test/extract-test.mjs test/fixtures/putty.chm"
+    "test": "node test/unit-test.mjs && node test/store-test.mjs && node test/renderer-test.mjs novel.chm && node test/novel-test.mjs novel.chm && node test/extract-test.mjs test/fixtures/putty.chm && node test/extract-test.mjs novel.chm"
   },
   "dependencies": {
     "@preact/signals": "^2.0.0",

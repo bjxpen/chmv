@@ -70,6 +70,15 @@ export function isHtmlPath(path) {
   return /\.(x?html?|xht)$/i.test(path);
 }
 
+export function isTextPath(path) {
+  return /\.txt$/i.test(path);
+}
+
+/** Paths the reader can render as a chapter (HTML, or novel-style .txt). */
+export function isRenderablePath(path) {
+  return isHtmlPath(path) || isTextPath(path);
+}
+
 export function isExternalHref(href) {
   return /^(https?|mailto|ftp|tel|data|javascript|about):/i.test(String(href).trim());
 }
