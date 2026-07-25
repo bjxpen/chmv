@@ -51,7 +51,7 @@ export function canonicalCharset(name) {
 }
 
 /** Look at the first 2KB (as latin-1) for a meta charset declaration. */
-export function sniffMetaCharset(bytes) {
+function sniffMetaCharset(bytes) {
   const head = bytes.subarray(0, 2048);
   let s = '';
   for (let i = 0; i < head.length; i++) s += String.fromCharCode(head[i]);
@@ -85,23 +85,30 @@ export function looksLikeValidUtf8(bytes) {
   return multibyte ? 'multibyte' : 'ascii';
 }
 
-export function hasUtf8Bom(bytes) {
+function hasUtf8Bom(bytes) {
   return bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf;
 }
 
 /**
+ * Sniff a document's own encoding declaration/shape.
+ * Order: explicit meta charset -> UTF-8 BOM -> valid multibyte UTF-8.
+ * @returns {{encoding: string, source: string} | null}
+ */
+export function sniffEncoding(bytes) {
+  const meta = canonicalCharset(sniffMetaCharset(bytes));
+  if (meta) return { encoding: meta, source: 'meta' };
+  if (hasUtf8Bom(bytes)) return { encoding: 'utf-8', source: 'bom' };
+  if (looksLikeValidUtf8(bytes) === 'multibyte') return { encoding: 'utf-8', source: 'heuristic' };
+  return null;
+}
+
+/**
  * Pick the best encoding for a document's raw bytes.
- * @param {Uint8Array} bytes
  * @param {string|null} override user-selected encoding ('' / null = auto)
  * @param {string} bookDefault book-level detected encoding
  */
 export function effectiveEncoding(bytes, override, bookDefault) {
-  if (override) return override;
-  const meta = canonicalCharset(sniffMetaCharset(bytes));
-  if (meta) return meta;
-  if (hasUtf8Bom(bytes)) return 'utf-8';
-  if (looksLikeValidUtf8(bytes) === 'multibyte') return 'utf-8';
-  return bookDefault || 'utf-8';
+  return override || sniffEncoding(bytes)?.encoding || bookDefault || 'utf-8';
 }
 
 export function decodeBytes(bytes, encoding) {

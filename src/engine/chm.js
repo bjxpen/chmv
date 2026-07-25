@@ -430,10 +430,9 @@ export class ChmFile {
       throw new ChmError('read out of object bounds');
     }
     if (length === 0) return new Uint8Array(0);
-    if (entry.space === CHM_UNCOMPRESSED) {
-      return this._readUncompressed(entry, offset, length);
-    }
-    return this._readCompressed(entry, offset, length);
+    return entry.space === CHM_COMPRESSED
+      ? this._readCompressed(entry, offset, length)
+      : this._readUncompressed(entry, offset, length);
   }
 
   /** Retrieve the full contents of an object by path. */

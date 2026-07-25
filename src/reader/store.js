@@ -130,6 +130,43 @@ export function createStore({ createEngine, library, hashFile }) {
 
   /* ---------------- actions ---------------- */
 
+  /* tear down the current book session (worker, timers, rendered DOM) */
+  const closeSession = () => {
+    clearTimeout(session.saveTimer);
+    session.engine?.terminate();
+    session = { ...session, engine: null, file: null, hash: null };
+    session.navToken++;
+    view.reset();
+  };
+
+  const publishBook = (info, file, override) => {
+    const title = info.title || file.name.replace(/\.chm$/i, '');
+    batch(() => {
+      book.value = info;
+      bookTitle.value = title;
+      encodingOverride.value = override;
+      toc.value = { tocTree: info.tocTree, indexList: info.indexList };
+      spine.value = buildSpine(info);
+    });
+    document.title = `${title} · chmv`;
+    return title;
+  };
+
+  /* restore the saved position, or open the first chapter */
+  const openInitialChapter = async (saved) => {
+    const target = saved?.chapter && spineIndex.value.has(saved.chapter.toLowerCase())
+      ? saved.chapter
+      : spine.value[0];
+    if (!target) {
+      loading.value = null;
+      notify('This CHM contains no HTML documents.');
+      return;
+    }
+    const resume = saved?.chapter === target ? saved.scroll : 0;
+    await navigateTo(target, { scrollTo: resume });
+    if (resume > 4) notify('Resumed where you left off.');
+  };
+
   const openFile = async (file, handle = null) => {
     if (!file) return;
     if (!/\.chm$/i.test(file.name)) {
@@ -142,10 +179,7 @@ export function createStore({ createEngine, library, hashFile }) {
       bookTitle.value = file.name;
       currentPath.value = null;
     });
-    session.engine?.terminate();
-    session = { ...session, engine: null, file: null, hash: null };
-    session.navToken++;
-    view.reset();
+    closeSession();
 
     try {
       const hash = await hashFile(file);
@@ -154,17 +188,8 @@ export function createStore({ createEngine, library, hashFile }) {
       const override = saved?.encoding || '';
       const info = await engine.open(file, override || null);
 
-      const title = info.title || file.name.replace(/\.chm$/i, '');
       session = { ...session, engine, file, hash };
-
-      batch(() => {
-        book.value = info;
-        bookTitle.value = title;
-        encodingOverride.value = override;
-        toc.value = { tocTree: info.tocTree, indexList: info.indexList };
-        spine.value = buildSpine(info);
-      });
-      document.title = `${title} · chmv`;
+      const title = publishBook(info, file, override);
 
       await library.putBook({
         chapter: null, scroll: 0, progress: 0, firstOpened: Date.now(),
@@ -174,17 +199,7 @@ export function createStore({ createEngine, library, hashFile }) {
       });
       if (handle) await library.putHandle(hash, handle);
 
-      const target = saved?.chapter && spineIndex.value.has(saved.chapter.toLowerCase())
-        ? saved.chapter
-        : spine.value[0];
-      if (!target) {
-        loading.value = null;
-        notify('This CHM contains no HTML documents.');
-        return;
-      }
-      const resume = saved?.chapter === target ? saved.scroll : 0;
-      await navigateTo(target, { scrollTo: resume });
-      if (resume > 4) notify('Resumed where you left off.');
+      await openInitialChapter(saved);
     } catch (err) {
       console.error(err);
       loading.value = null;
@@ -301,7 +316,11 @@ export function createStore({ createEngine, library, hashFile }) {
   };
 
   const goHome = () => {
+    clearTimeout(session.saveTimer);
     saveProgress();
+    /* drop LZX block caches while idling on the shelf — the worker
+     * stays alive for a quick resume, but releases decompression RAM */
+    session.engine?.dropCaches().catch(() => {});
     batch(() => {
       screen.value = 'home';
       focusMode.value = false;

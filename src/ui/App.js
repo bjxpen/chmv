@@ -33,25 +33,29 @@ const useShortcuts = (store) => {
       }
       if (!inReader || isEditable(e.target)) return;
 
-      const scroller = document.querySelector('.scroller');
-      const actions = {
-        ArrowRight: () => store.gotoSibling(1),
-        j: () => store.gotoSibling(1),
-        J: () => store.gotoSibling(1),
-        ArrowLeft: () => store.gotoSibling(-1),
-        k: () => store.gotoSibling(-1),
-        K: () => store.gotoSibling(-1),
-        ' ': () => scroller?.scrollBy({
+      const pageScroll = () => {
+        const scroller = document.querySelector('.scroller');
+        scroller?.scrollBy({
           top: scroller.clientHeight * 0.88 * (e.shiftKey ? -1 : 1),
-          behavior: 'smooth',
-        }),
-        b: () => store.updateSettings({ sidebarHidden: !store.settings.value.sidebarHidden }),
-        B: () => store.updateSettings({ sidebarHidden: !store.settings.value.sidebarHidden }),
-        f: () => (store.focusMode.value = !store.focusMode.value),
-        F: () => (store.focusMode.value = !store.focusMode.value),
-        Escape: () => (store.focusMode.value ? (store.focusMode.value = false) : store.goHome()),
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'auto' : 'smooth',
+        });
       };
-      const action = actions[e.key];
+      const toggleSidebar = () =>
+        store.updateSettings({ sidebarHidden: !store.settings.value.sidebarHidden });
+      const toggleFocus = () => (store.focusMode.value = !store.focusMode.value);
+
+      const actions = {
+        arrowright: () => store.gotoSibling(1),
+        j: () => store.gotoSibling(1),
+        arrowleft: () => store.gotoSibling(-1),
+        k: () => store.gotoSibling(-1),
+        ' ': pageScroll,
+        b: toggleSidebar,
+        f: toggleFocus,
+        escape: () => (store.focusMode.value ? toggleFocus() : store.goHome()),
+      };
+      const action = actions[e.key.toLowerCase()];
       if (action) {
         e.preventDefault();
         action();

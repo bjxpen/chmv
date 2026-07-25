@@ -70,7 +70,6 @@ export function parseSitemap(text) {
   const stack = [root];
   let lastNode = null;      /* candidate parent for the next <ul> */
   let collecting = null;    /* params of the <object> currently open */
-  let objectIsSitemap = false;
 
   const tagRe = /<\s*(\/?)\s*([a-zA-Z][a-zA-Z0-9]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/g;
   let m;
@@ -90,8 +89,7 @@ export function parseSitemap(text) {
     } else if (tag === 'object') {
       if (!closing) {
         const attrs = parseAttrs(body);
-        objectIsSitemap = /text\/sitemap/i.test(attrs.type || '');
-        collecting = objectIsSitemap ? { params: [] } : null;
+        collecting = /text\/sitemap/i.test(attrs.type || '') ? { params: [] } : null;
       } else if (collecting) {
         const node = buildNode(collecting.params);
         if (node) {
@@ -131,26 +129,13 @@ function buildNode(params) {
 }
 
 /**
- * Flatten a sitemap tree into unique document paths in reading order.
- * @param {{children: SitemapNode[]}} root
- * @param {(local: string) => string} normalize path normalizer
- * @returns {string[]}
+ * Factory for UI TOC nodes with sequential ids — shared by every code
+ * path that synthesizes navigation trees (sitemap packing, novel nav,
+ * directory fallback).
  */
-export function flattenSitemapLocals(root, normalize) {
-  const seen = new Set();
-  const order = [];
-  const walk = (node) => {
-    if (node.local) {
-      const p = normalize(node.local);
-      if (p && !seen.has(p.toLowerCase())) {
-        seen.add(p.toLowerCase());
-        order.push(p);
-      }
-    }
-    for (const child of node.children) walk(child);
-  };
-  for (const child of root.children) walk(child);
-  return order;
+export function nodeFactory() {
+  let nextId = 0;
+  return (name, local = null, children = []) => ({ id: nextId++, name, local, children });
 }
 
 /**

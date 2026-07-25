@@ -13,6 +13,7 @@
 import { normalizePath, fragmentOf, isExternalHref, isTextPath, isRenderablePath } from '../engine/paths.js';
 import { effectiveEncoding, decodeBytes } from '../engine/encodings.js';
 import { isDocWriteJs, docWriteToHtml, plainTextToHtml } from '../engine/noveljs.js';
+import { baseChapterCss } from './chapter-css.js';
 
 const DROP_TAGS = new Set([
   'script', 'object', 'embed', 'applet', 'iframe', 'frame', 'frameset',
@@ -49,10 +50,18 @@ export class Renderer {
     this.container.className = 'chapters';
     this.shadow.appendChild(this.container);
 
-    /* blob bookkeeping: section element -> Set<blobURL> */
+    /* blob bookkeeping: section element -> Set<assetPath> (deduped per
+     * section; refcounts in assetCache are per-section, not per-use) */
     this.sectionBlobs = new Map();
-    /* small shared asset cache to dedupe repeated images (path -> {url, refs}) */
+    /* shared refcounted asset cache (lower path -> {url, refs, size}).
+     * Assets referenced by no section are kept in an LRU pool so
+     * chapter-to-chapter navigation reuses common template images
+     * instead of revoke+refetch+recreate. */
     this.assetCache = new Map();
+    this.idlePool = [];               /* lower paths with refs === 0, LRU order */
+    this.idlePoolBudget = 12 * 1024 * 1024; /* bytes kept alive while unreferenced */
+    /* in-flight fetches so concurrent uses of one asset share a request */
+    this.assetPending = new Map();
 
     this.overrideStyles = true;
     this.bookEncoding = 'utf-8';
@@ -73,71 +82,7 @@ export class Renderer {
   }
 
   _applyBaseStyle() {
-    const overrides = this.overrideStyles
-      ? `
-      /* Neutralize hardcoded legacy styling so themes apply uniformly. */
-      .chapters section.doc, .chapters section.doc * {
-        background: transparent !important;
-        color: inherit !important;
-        font-family: inherit !important;
-        line-height: inherit !important;
-        letter-spacing: inherit !important;
-      }
-      .chapters section.doc font { font-size: inherit !important; }
-      .chapters section.doc table { border-color: color-mix(in srgb, currentColor 25%, transparent) !important; }
-      `
-      : '';
-
-    this.baseStyle.textContent = `
-      :host { display: block; }
-      .chapters {
-        color: var(--reader-fg, #333);
-        font-family: var(--reader-font, sans-serif);
-        font-size: var(--reader-font-size, 18px);
-        line-height: var(--reader-line-height, 1.8);
-        letter-spacing: var(--reader-letter-spacing, 0.02em);
-        overflow-wrap: break-word;
-        word-break: normal;
-        line-break: loose;
-        text-align: justify;
-        text-justify: inter-ideograph;
-      }
-      section.doc { padding: 0 0 1em; }
-      section.doc:focus { outline: none; }
-      section.doc p, section.doc div {
-        margin-block-start: var(--reader-para-spacing, 0.9em);
-        margin-block-end: var(--reader-para-spacing, 0.9em);
-      }
-      section.doc h1, section.doc h2, section.doc h3, section.doc h4 {
-        line-height: 1.4;
-        margin: 1.2em 0 0.6em;
-      }
-      section.doc img { max-width: 100%; height: auto; }
-      section.doc table { max-width: 100%; border-collapse: collapse; }
-      section.doc td, section.doc th { padding: 2px 8px; }
-      section.doc pre, section.doc code, section.doc tt {
-        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-        line-break: auto;
-      }
-      section.doc pre {
-        overflow-x: auto;
-        background: color-mix(in srgb, currentColor 7%, transparent);
-        padding: 0.7em 1em;
-        border-radius: 6px;
-      }
-      section.doc a { color: var(--reader-link, #2467c6); }
-      section.doc hr { border: none; border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent); }
-      .chapter-divider {
-        display: flex; align-items: center; gap: 1em;
-        margin: 2.2em 0; color: var(--reader-fg-muted, #999);
-        font-size: 0.8em; user-select: none;
-      }
-      .chapter-divider::before, .chapter-divider::after {
-        content: ''; flex: 1;
-        border-top: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-      }
-      ${overrides}
-    `;
+    this.baseStyle.textContent = baseChapterCss(this.overrideStyles);
   }
 
   /* ---------------------------------------------------------------- */
@@ -170,26 +115,31 @@ export class Renderer {
   removeSection(section) {
     const blobs = this.sectionBlobs.get(section);
     if (blobs) {
-      for (const path of blobs) this._releaseAsset(path);
+      for (const key of blobs) this._releaseAsset(key);
       this.sectionBlobs.delete(section);
     }
     if (section._divider) section._divider.remove();
     section.remove();
   }
 
-  /** Remove everything and free every object URL. */
+  /**
+   * Remove all sections. Unreferenced assets stay parked in the idle
+   * pool (bounded) so the next chapter can reuse shared images.
+   */
   clear() {
     for (const section of [...this.sectionBlobs.keys()]) this.removeSection(section);
     this.container.textContent = '';
-    /* safety net: revoke anything that leaked */
-    for (const [path, rec] of this.assetCache) {
-      URL.revokeObjectURL(rec.url);
-      this.assetCache.delete(path);
-    }
   }
 
-  get sections() {
-    return [...this.container.querySelectorAll('section.doc')];
+  /** Full teardown (book closed): revoke every object URL. */
+  dispose() {
+    this.clear();
+    for (const [key, rec] of this.assetCache) {
+      URL.revokeObjectURL(rec.url);
+      this.assetCache.delete(key);
+    }
+    this.idlePool.length = 0;
+    this.assetPending.clear();
   }
 
   /* ---------------------------------------------------------------- */
@@ -276,7 +226,7 @@ export class Renderer {
       }
     }
 
-    this._sanitize(doc, path);
+    this._sanitize(doc);
 
     const body = doc.body || doc.documentElement;
     const fragment = document.createDocumentFragment();
@@ -316,7 +266,7 @@ export class Renderer {
     }
   }
 
-  _sanitize(doc, docPath) {
+  _sanitize(doc) {
     /* legacy frame shells: replace iframe/frame with a link to the target
      * document instead of silently dropping it (common CHM entry pages
      * are nothing but an <iframe src="index.htm">) */
@@ -375,10 +325,9 @@ export class Renderer {
       img.removeAttribute('src');
       img.setAttribute('loading', 'lazy');
       jobs.push(
-        this._acquireAsset(assetPath).then((url) => {
+        this._acquireAsset(assetPath, blobs).then((url) => {
           if (url) {
             img.setAttribute('src', url);
-            blobs.add(assetPath);
           } else {
             img.setAttribute('alt', img.getAttribute('alt') || `[missing: ${src}]`);
           }
@@ -444,11 +393,8 @@ export class Renderer {
       if (isExternalHref(ref) || ref.startsWith('blob:') || seen.has(ref)) continue;
       const p = normalizePath(basePath, ref);
       if (!p) continue;
-      const url = await this._acquireAsset(p);
-      if (url) {
-        blobs.add(p);
-        seen.set(ref, url);
-      }
+      const url = await this._acquireAsset(p, blobs);
+      if (url) seen.set(ref, url);
     }
     if (seen.size) {
       css = css.replace(urlRe, (whole, quote, ref) => {
@@ -468,34 +414,74 @@ export class Renderer {
     }
   }
 
-  /** get (or create) a refcounted blob URL for an internal asset */
-  async _acquireAsset(path) {
+  /**
+   * Get (or create) a blob URL for an internal asset, refcounted **per
+   * section**: the caller passes the section's `blobs` set, and the ref
+   * is only incremented the first time this section uses the asset —
+   * matching the single release performed in removeSection(). Concurrent
+   * requests for one asset share a single fetch.
+   */
+  async _acquireAsset(path, blobs) {
     const key = path.toLowerCase();
+
+    const grab = (rec) => {
+      if (blobs && !blobs.has(key)) {
+        blobs.add(key);
+        if (rec.refs === 0) this._unpoolIdle(key);
+        rec.refs++;
+      }
+      return rec.url;
+    };
+
     const cached = this.assetCache.get(key);
-    if (cached) {
-      cached.refs++;
-      return cached.url;
+    if (cached) return grab(cached);
+
+    /* share an in-flight fetch instead of decompressing twice */
+    let pending = this.assetPending.get(key);
+    if (!pending) {
+      pending = this._fetchRaw(path).then((res) => {
+        this.assetPending.delete(key);
+        if (!res) return null;
+        const url = URL.createObjectURL(new Blob([res.buffer], { type: res.mime }));
+        const rec = { url, refs: 0, size: res.buffer.byteLength || 0 };
+        this.assetCache.set(key, rec);
+        return rec;
+      });
+      this.assetPending.set(key, pending);
     }
-    const res = await this._fetchRaw(path);
-    if (!res) return null;
-    /* re-check: a concurrent job may have populated the cache meanwhile */
-    const raced = this.assetCache.get(key);
-    if (raced) {
-      raced.refs++;
-      return raced.url;
-    }
-    const url = URL.createObjectURL(new Blob([res.buffer], { type: res.mime }));
-    this.assetCache.set(key, { url, refs: 1 });
-    return url;
+    const rec = await pending;
+    return rec ? grab(rec) : null;
   }
 
-  _releaseAsset(path) {
-    const key = path.toLowerCase();
+  _releaseAsset(key) {
     const rec = this.assetCache.get(key);
     if (!rec) return;
     if (--rec.refs <= 0) {
-      URL.revokeObjectURL(rec.url);
-      this.assetCache.delete(key);
+      rec.refs = 0;
+      /* park in the idle LRU pool instead of revoking immediately:
+       * template images shared across chapters get reused on the next
+       * navigation instead of refetch + re-decompress + new blob */
+      this.idlePool.push(key);
+      this._trimIdlePool();
+    }
+  }
+
+  _unpoolIdle(key) {
+    const i = this.idlePool.indexOf(key);
+    if (i >= 0) this.idlePool.splice(i, 1);
+  }
+
+  _trimIdlePool() {
+    let bytes = 0;
+    for (const key of this.idlePool) bytes += this.assetCache.get(key)?.size || 0;
+    while (this.idlePool.length && bytes > this.idlePoolBudget) {
+      const key = this.idlePool.shift();
+      const rec = this.assetCache.get(key);
+      if (rec && rec.refs === 0) {
+        URL.revokeObjectURL(rec.url);
+        this.assetCache.delete(key);
+        bytes -= rec.size || 0;
+      }
     }
   }
 

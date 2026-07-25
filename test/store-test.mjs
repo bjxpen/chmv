@@ -2,15 +2,11 @@
 // against a fake engine + in-memory library (no worker, no IndexedDB).
 // Runs in Node with happy-dom globals — possible because the store gets
 // all collaborators via dependency injection.
-import assert from 'node:assert/strict';
-import { Window } from 'happy-dom';
+import { makeAsserter, bootstrapDom } from './helpers.mjs';
 
 /* -- bootstrap DOM globals before importing app modules -------------- */
-const win = new Window({ url: 'http://localhost/' });
-for (const key of ['document', 'localStorage', 'CustomEvent', 'Blob', 'URL']) {
-  try { globalThis[key] = win[key]; } catch { /* read-only global */ }
-}
-globalThis.window = win;
+const win = await bootstrapDom();
+try { globalThis.URL = win.URL; } catch { /* read-only */ }
 
 const { createStore } = await import('../src/reader/store.js');
 
@@ -22,11 +18,9 @@ const docs = {
 };
 
 const enc = new TextEncoder();
-let engineOpens = 0;
 
 const fakeEngine = () => ({
   open: async () => {
-    engineOpens++;
     return {
       title: 'Test Book',
       encoding: 'gbk',
@@ -76,10 +70,7 @@ store.connectView({
   reset: () => {},
 });
 
-let passed = 0;
-const ok = (cond, name) => {
-  if (!cond) { console.error(`FAIL: ${name}`); process.exitCode = 1; } else passed++;
-};
+const { ok, done } = makeAsserter('store tests');
 
 const file = { name: 'novel.chm', size: 100, slice: () => ({ arrayBuffer: async () => new ArrayBuffer(0) }) };
 await store.openFile(file);
@@ -131,5 +122,5 @@ await store2.saveProgress(); /* flush the debounced save */
 const shelfRows = await fakeLibrary.listBooks();
 ok(shelfRows.length === 1 && shelfRows[0].encoding === 'big5', 'store: shelf row updated with encoding');
 
-console.log(`store tests: ${passed} passed${process.exitCode ? ' (with failures)' : ''}`);
+done();
 process.exit(process.exitCode || 0);

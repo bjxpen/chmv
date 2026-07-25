@@ -188,9 +188,14 @@ export class LzxState {
   decompress(input, outLen) {
     const state = this;
     /* Pad input: the bit reader may fetch up to 2 bytes past the end of
-     * the compressed data (mirrors the slack buffer in chm_lib.c). */
-    const inbuf = new Uint8Array(input.length + 8);
+     * the compressed data (mirrors the slack buffer in chm_lib.c).
+     * The scratch buffer is reused across calls to avoid per-block GC. */
+    if (!this._inbuf || this._inbuf.length < input.length + 8) {
+      this._inbuf = new Uint8Array(input.length + 8);
+    }
+    const inbuf = this._inbuf;
     inbuf.set(input);
+    inbuf.fill(0, input.length, input.length + 8);
 
     const endinp = input.length;
     const window = state.window;
@@ -212,7 +217,6 @@ export class LzxState {
         inpos += 2;
       }
     };
-    const peekBits = (n) => (n === 0 ? 0 : bitbuf >>> (32 - n));
     const removeBits = (n) => {
       bitbuf = (bitbuf << n) >>> 0;
       bitsleft -= n;
@@ -449,8 +453,15 @@ export class LzxState {
                 window[rundest++] = window[runsrc + windowSize];
                 runsrc++;
               }
-              /* copy match data - no worries about destination wraps */
-              while (matchLength-- > 0) window[rundest++] = window[runsrc++];
+              /* copy match data. Non-overlapping ranges (offset >= length)
+               * can use the engine's vectorized copyWithin. */
+              if (matchLength > 0) {
+                if (rundest - runsrc >= matchLength && matchLength > 12) {
+                  window.copyWithin(rundest, runsrc, runsrc + matchLength);
+                } else {
+                  while (matchLength-- > 0) window[rundest++] = window[runsrc++];
+                }
+              }
             }
             break;
           }
