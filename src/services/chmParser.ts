@@ -15,9 +15,9 @@ const CHM_SIGNATURE = 'ITSF';
 const CHM_DIR_SIGNATURE = 'ITSP';
 const CHM_CONTENT_SIGNATURE = 'CONT';
 
-// PMGL/PMGI directory types
-const PMGL_SIGNATURE = 0x01;
-const PMGI_SIGNATURE = 0x02;
+// PMGL/PMGI directory block markers
+const PMGL_SIGNATURE = 0x50; // 'P'
+const PMGI_SIGNATURE = 0x51; // 'Q'
 
 interface DirectoryHeader {
   signature: string;
@@ -74,30 +74,57 @@ export class CHMParser {
     const header = this.parseHeader();
     const entries = new Map<string, CHMDirectoryEntry>();
     
-    // Parse directory listing
-    const dirOffset = header.headerLength;
-    let currentOffset = dirOffset;
+    // Find ITSP (directory header) after main header
+    const itspOffset = this.findSignature('ITSP', header.headerLength);
+    
+    if (itspOffset === -1) {
+      return this.parseDirectoryAlternate(header.headerLength);
+    }
+    
+    // Find PMGL blocks starting from ITSP offset
+    let currentOffset = itspOffset;
+    let pmglCount = 0;
     
     try {
-      while (currentOffset < this.data.byteLength) {
-        const blockEntries = this.parseDirectoryBlock(currentOffset);
+      while (currentOffset < this.data.byteLength && pmglCount < 100) {
+        const pmglOffset = this.findSignature('PMGL', currentOffset);
+        if (pmglOffset === -1) break;
+        
+        // Try to decompress and parse the PMGL block
+        const blockEntries = this.parsePMGLBlock(pmglOffset);
         blockEntries.forEach((entry, path) => entries.set(path, entry));
         
-        // Read next block offset (last 8 bytes of block)
-        const blockSize = 0x2000; // Common block size
-        const nextOffset = this.view.getUint32(currentOffset + blockSize - 4, true);
+        pmglCount++;
         
-        if (nextOffset === 0 || nextOffset >= this.data.byteLength) {
+        // Calculate next block offset
+        const blockSize = 0x2000;
+        const nextOffset = this.view.getUint32(pmglOffset + blockSize - 4, true);
+        
+        if (nextOffset === 0 || nextOffset >= this.data.byteLength || nextOffset <= pmglOffset) {
           break;
         }
         currentOffset = nextOffset;
       }
     } catch {
-      // Try alternate directory parsing
-      return this.parseDirectoryAlternate(dirOffset);
+      return this.parseDirectoryAlternate(header.headerLength);
     }
     
     return entries;
+  }
+  
+  private findSignature(sig: string, startOffset: number): number {
+    const bytes = new TextEncoder().encode(sig);
+    for (let i = startOffset; i < Math.min(startOffset + 0x10000, this.data.byteLength - bytes.length); i++) {
+      let found = true;
+      for (let j = 0; j < bytes.length; j++) {
+        if (this.view.getUint8(i + j) !== bytes[j]) {
+          found = false;
+          break;
+        }
+      }
+      if (found) return i;
+    }
+    return -1;
   }
   
   private parseDirectoryBlock(offset: number): Map<string, CHMDirectoryEntry> {
@@ -118,50 +145,81 @@ export class CHMParser {
     const entries = new Map<string, CHMDirectoryEntry>();
     
     try {
-      const signature = this.view.getUint8(offset);
-      if (signature !== PMGL_SIGNATURE && signature !== 0) {
+      // Read block header
+      const blockHeader = this.getString(offset, 4);
+      if (blockHeader !== 'PMGL') {
         return entries;
       }
       
-      const freeSpace = this.view.getUint32(offset + 4, true);
-      const blockSize = 0x2000;
-      const endOfBlock = offset + blockSize - freeSpace - 8;
+      // PMGL entries are LZX compressed
+      // Extract the compressed data (skip 12-byte header + 8-byte section marker)
+      const compressedStart = offset + 12 + 8;
+      const compressedSize = 0x2000 - 12 - 8;
       
-      let pos = offset + 8;
+      const compressedData = new Uint8Array(this.data, compressedStart, compressedSize);
       
-      while (pos < endOfBlock) {
-        const entryLength = this.view.getUint16(pos, true);
-        if (entryLength === 0) break;
-        
-        try {
-          const entryData = new Uint8Array(this.data, pos + 2, entryLength - 2);
-          const entryStr = this.decodeString(entryData);
-          
-          if (entryStr) {
-            const parts = entryStr.split('\0');
-            if (parts.length >= 3) {
-              const name = parts[0];
-              const offsetVal = parseInt(parts[1], 10);
-              const length = parseInt(parts[2], 10);
-              
-              if (name && offsetVal >= 0 && length > 0) {
-                entries.set(name, {
-                  name,
-                  offset: offsetVal,
-                  length,
-                  flags: 0
-                });
-              }
-            }
-          }
-        } catch {
-          // Skip malformed entries
+      // Try to decompress
+      let decompressedData: Uint8Array;
+      try {
+        decompressedData = decompressLZX(compressedData, 0x2000);
+      } catch {
+        // Decompression failed, try raw parsing
+        decompressedData = compressedData;
+      }
+      
+      // Parse decompressed entries
+      // Format: name_len(1) + name + 0x00 + offset(4) + length(4)
+      const dataView = new DataView(decompressedData.buffer);
+      let pos = 0;
+      let consecutiveSkips = 0;
+      
+      while (pos < decompressedData.length - 20 && consecutiveSkips < 20) {
+        // Skip invalid entries
+        if (decompressedData[pos] < 2 || decompressedData[pos] > 100) {
+          pos++;
+          consecutiveSkips++;
+          continue;
         }
+        consecutiveSkips = 0;
         
-        pos += entryLength;
+        // Read name length
+        const nameLen = decompressedData[pos++];
+        
+        if (pos + nameLen > decompressedData.length) break;
+        
+        // Read name bytes
+        const nameBytes = decompressedData.slice(pos, pos + nameLen);
+        pos += nameLen;
+        
+        // Skip null byte
+        if (decompressedData[pos] === 0) pos++;
+        
+        // Read offset
+        if (pos + 4 > decompressedData.length) break;
+        const fileOffset = dataView.getUint32(pos, true);
+        pos += 4;
+        
+        // Read length
+        if (pos + 4 > decompressedData.length) break;
+        const fileLength = dataView.getUint32(pos, true);
+        pos += 4;
+        
+        // Validate and add entry
+        if (fileOffset > 0 && fileOffset < this.data.byteLength && 
+            fileLength > 0 && fileLength < this.data.byteLength) {
+          const name = new TextDecoder('utf-8', { fatal: false }).decode(nameBytes);
+          if (name && name.length > 0) {
+            entries.set(name, {
+              name,
+              offset: fileOffset,
+              length: fileLength,
+              flags: 0
+            });
+          }
+        }
       }
     } catch {
-      // Block parsing failed
+      // Parsing failed
     }
     
     return entries;
@@ -170,33 +228,83 @@ export class CHMParser {
   private parseDirectoryAlternate(offset: number): Map<string, CHMDirectoryEntry> {
     const entries = new Map<string, CHMDirectoryEntry>();
     
-    // Try to find entries by scanning for common CHM file patterns
-    const commonFiles = [
-      '/#WINDOWS', '/#SYSTEM', '/#STRINGS', '/#ROT',
-      '/::DataSpace/Info', '/::DataSpace/Storage',
-      '/$OBJINST/', '/$WWRelLinks/',
-      '/index.hhc', '/index.hhk', '/Table of Contents.hhc',
-      '/Default.css', '/styles.css', '/topic.css'
-    ];
-    
-    // Scan for content
-    const scanWindow = 256;
-    let pos = offset;
-    
-    while (pos < this.data.byteLength - scanWindow) {
-      // Look for content markers
-      const marker = this.view.getUint8(pos);
-      
-      if (marker === 0x01 || marker === PMGL_SIGNATURE) {
-        // Try parsing this position as a PMGL block
-        const blockEntries = this.parsePMGLBlock(pos);
+    // Try to find ITSP first
+    const itspOffset = this.findSignature('ITSP', offset);
+    if (itspOffset !== -1) {
+      // Find and parse PMGL blocks
+      let pos = itspOffset;
+      for (let i = 0; i < 50; i++) {
+        const pmglOffset = this.findSignature('PMGL', pos);
+        if (pmglOffset === -1) break;
+        
+        const blockEntries = this.parsePMGLBlock(pmglOffset);
         blockEntries.forEach((entry, path) => entries.set(path, entry));
+        
+        pos = pmglOffset + 0x2000;
+        if (entries.size > 0) break;
       }
       
-      pos += 0x1000; // Skip block by block
+      if (entries.size > 0) {
+        return entries;
+      }
+    }
+    
+    // Last resort fallback: try to find any HTML-like content in the file
+    // This handles CHMs with unusual formats or corrupted directories
+    const searchPatterns = [
+      '/start.htm',
+      '/index.htm', 
+      '/default.htm',
+      '/default.html',
+      '/index.html'
+    ];
+    
+    // Search for common CHM entry paths
+    for (const path of searchPatterns) {
+      const pathBytes = new TextEncoder().encode(path);
+      const pathPos = this.findBinary(pathBytes, offset);
+      if (pathPos !== -1) {
+        // Found a path reference, try to find its offset/length nearby
+        const nearbyOffset = this.extractOffsetNear(pathPos + pathBytes.length);
+        if (nearbyOffset && nearbyOffset > 0) {
+          entries.set(path, {
+            name: path,
+            offset: nearbyOffset,
+            length: 100000, // Estimated length
+            flags: 0
+          });
+        }
+      }
     }
     
     return entries;
+  }
+  
+  private findBinary(pattern: Uint8Array, startOffset: number): number {
+    for (let i = startOffset; i < this.data.byteLength - pattern.length; i++) {
+      let found = true;
+      for (let j = 0; j < pattern.length; j++) {
+        if (this.view.getUint8(i + j) !== pattern[j]) {
+          found = false;
+          break;
+        }
+      }
+      if (found) return i;
+    }
+    return -1;
+  }
+  
+  private extractOffsetNear(pos: number): number {
+    // Try to extract a valid offset from bytes near pos
+    // Look for sequences that could be valid offsets
+    for (let i = 0; i < 100; i++) {
+      const offset = this.view.getUint32(pos + i, true);
+      if (offset > 0 && offset < this.data.byteLength && offset > 1000) {
+        // This looks like a valid offset
+        return offset;
+      }
+    }
+    return 0;
   }
   
   private decodeString(data: Uint8Array): string {
