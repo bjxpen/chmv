@@ -88,21 +88,21 @@ npm install
 npm run dev        # dev server
 npm run build      # production build (dist/)
 npm run preview    # serve the production build
-npm run singlepage # single-file build → dist-singlepage/index.html
+npm run standalone # standalone build → dist-standalone/index.html
 npm test           # all suites: unit, store, renderer, novel, extraction
 npm run lint       # eslint over src/ and test/
 node test/store-test.mjs   # store integration flow with fakes
 ```
 
-### Single-file version
+### Standalone version
 
 Want a version you can just double-click and open?
 
 ```sh
-npm run singlepage
+npm run standalone
 ```
 
-This produces `dist-singlepage/index.html` — everything (app + worker) is bundled into one file. It works great when opened directly from your filesystem (`file://`), no server needed. Perfect for sharing or keeping a portable copy.
+This produces `dist-standalone/index.html` (plus a few asset files). Everything is bundled so it works great when opened directly from your filesystem (`file://`), no server needed. Perfect for sharing or keeping a portable copy.
 
 `test/extract-test.mjs` extracts every entry of a fixture CHM and can
 byte-compare against a directory produced by CHMLib's `extract_chmLib`

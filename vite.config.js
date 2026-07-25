@@ -9,7 +9,7 @@ export default defineConfig({
   base: './',
   build: { target: 'es2022' },
   worker: { format: 'es' },
-  define: process.env.SINGLEFILE
+  define: process.env.STANDALONE
     ? {
         __CHM_WORKER_SRC__: JSON.stringify(
           buildSync({
@@ -23,8 +23,8 @@ export default defineConfig({
       }
     : {},
   plugins: [
-    // singlefile build only when explicitly requested via env
-    ...(process.env.SINGLEFILE
+    // standalone (single-file) build only when explicitly requested via env
+    ...(process.env.STANDALONE || process.env.SINGLEFILE
       ? [viteSingleFile()]
       : [
           VitePWA({
