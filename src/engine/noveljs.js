@@ -13,7 +13,7 @@
 
 'use strict';
 
-import { decodeEntities } from './hhc.js';
+import { decodeEntities, nodeFactory } from './hhc.js';
 import { decodeBytes, looksLikeValidUtf8 } from './encodings.js';
 
 /* ---------------- JS string-literal lexer ---------------- */
@@ -28,21 +28,23 @@ const unescapeJs = (s) => s.replace(
 );
 
 /**
- * Collect the string literals of one parenthesized argument list starting
- * at `start` (index of the opening paren). Non-literal tokens (variables,
- * `+`, commas) are skipped. Returns { text, end }.
+ * Scan a bracketed/parenthesized group starting at `start` (index of the
+ * opening delimiter), collecting every string literal it contains.
+ * Non-literal tokens (variables, `+`, commas) are skipped; nesting of the
+ * same delimiter pair is honored. Returns { literals, end }.
  */
-function readCallLiterals(src, start) {
+function readGroupLiterals(src, start) {
+  const open = src[start];
+  const close = open === '[' ? ']' : ')';
+  const literals = [];
   let i = start + 1;
   let depth = 1;
-  let text = '';
   while (i < src.length && depth > 0) {
     const ch = src[i];
     if (ch === '"' || ch === "'") {
-      const quote = ch;
       let j = i + 1;
       let lit = '';
-      while (j < src.length && src[j] !== quote) {
+      while (j < src.length && src[j] !== ch) {
         if (src[j] === '\\' && j + 1 < src.length) {
           lit += src[j] + src[j + 1];
           j += 2;
@@ -50,17 +52,17 @@ function readCallLiterals(src, start) {
           lit += src[j++];
         }
       }
-      text += unescapeJs(lit);
+      literals.push(unescapeJs(lit));
       i = j + 1;
-    } else if (ch === '(') {
+    } else if (ch === open) {
       depth++; i++;
-    } else if (ch === ')') {
+    } else if (ch === close) {
       depth--; i++;
     } else {
       i++;
     }
   }
-  return { text, end: i };
+  return { literals, end: i };
 }
 
 /** Does this source text look like a document.write-driven chapter? */
@@ -76,8 +78,8 @@ export function docWriteToHtml(text) {
   let html = '';
   let m;
   while ((m = re.exec(text)) !== null) {
-    const { text: chunk, end } = readCallLiterals(text, m.index + m[0].length - 1);
-    html += chunk;
+    const { literals, end } = readGroupLiterals(text, m.index + m[0].length - 1);
+    html += literals.join('');
     if (re.lastIndex < end) re.lastIndex = end;
   }
   return html;
@@ -100,41 +102,6 @@ const tidyTitle = (s, max = 48) => {
 };
 
 /**
- * Scan a bracketed list starting at `start` (index of '['), collecting
- * each string literal as a separate field. Returns { fields, end }.
- */
-function readBracketFields(src, start) {
-  let i = start + 1;
-  let depth = 1;
-  const fields = [];
-  while (i < src.length && depth > 0) {
-    const ch = src[i];
-    if (ch === '"' || ch === "'") {
-      const quote = ch;
-      let j = i + 1;
-      let lit = '';
-      while (j < src.length && src[j] !== quote) {
-        if (src[j] === '\\' && j + 1 < src.length) {
-          lit += src[j] + src[j + 1];
-          j += 2;
-        } else {
-          lit += src[j++];
-        }
-      }
-      fields.push(unescapeJs(lit));
-      i = j + 1;
-    } else if (ch === '[') {
-      depth++; i++;
-    } else if (ch === ']') {
-      depth--; i++;
-    } else {
-      i++;
-    }
-  }
-  return { fields, end: i };
-}
-
-/**
  * Parse `pages[N] = ['file','title','words','volume?']` entries.
  * @returns {Array<{file: string, title: string, volume: string|null}>}
  */
@@ -143,7 +110,7 @@ export function parsePagesArray(text) {
   const re = /pages\s*\[\s*(\d+)\s*\]\s*=\s*\[/g;
   let m;
   while ((m = re.exec(text)) !== null) {
-    const { fields, end } = readBracketFields(text, m.index + m[0].length - 1);
+    const { literals: fields, end } = readGroupLiterals(text, m.index + m[0].length - 1);
     if (fields.length >= 2) {
       const rawVol = fields[3];
       items.push({
@@ -203,8 +170,7 @@ export function synthesizeNovelNav(chm, encoding) {
     }
   }
 
-  let nextId = 0;
-  const node = (name, local) => ({ id: nextId++, name, local, children: [] });
+  const node = nodeFactory();
   const tocTree = [];
   const docPaths = [];
 

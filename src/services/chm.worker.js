@@ -9,7 +9,7 @@
 
 import * as Comlink from 'comlink';
 import { ChmFile } from '../engine/chm.js';
-import { openBook, buildNav } from '../engine/book.js';
+import { openBook, buildNav, listDocPaths } from '../engine/book.js';
 import { mimeFor, isRenderablePath } from '../engine/paths.js';
 
 const readerSync = new FileReaderSync();
@@ -70,10 +70,8 @@ class ChmEngine {
   /** (Re-)decode the TOC and keyword index with a given encoding. */
   sitemaps(encoding = null) {
     if (!this.#chm) return { tocTree: [], indexList: [] };
-    const htmlPaths = this.#chm.entries
-      .filter((e) => /^\/(?![#$:])/.test(e.path) && isRenderablePath(e.path))
-      .map((e) => e.path);
-    const { tocTree, indexList } = buildNav(this.#chm, this.#sitemaps, encoding, htmlPaths);
+    const { tocTree, indexList } =
+      buildNav(this.#chm, this.#sitemaps, encoding, listDocPaths(this.#chm));
     return { tocTree, indexList };
   }
 

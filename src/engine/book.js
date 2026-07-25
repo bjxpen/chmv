@@ -9,30 +9,19 @@
 
 'use strict';
 
-import { parseSitemap, flattenIndex } from './hhc.js';
+import { parseSitemap, flattenIndex, nodeFactory } from './hhc.js';
 import { normalizePath, isHtmlPath } from './paths.js';
-import {
-  LCID_CHARSETS, canonicalCharset, sniffMetaCharset,
-  looksLikeValidUtf8, hasUtf8Bom, decodeBytes,
-} from './encodings.js';
+import { LCID_CHARSETS, sniffEncoding, decodeBytes } from './encodings.js';
 import { synthesizeNovelNav } from './noveljs.js';
 
 /* ---------------- encoding detection ---------------- */
 
-export const guessDocEncoding = (bytes) => {
-  const meta = canonicalCharset(sniffMetaCharset(bytes));
-  if (meta) return { encoding: meta, source: 'meta' };
-  if (hasUtf8Bom(bytes)) return { encoding: 'utf-8', source: 'bom' };
-  if (looksLikeValidUtf8(bytes) === 'multibyte') return { encoding: 'utf-8', source: 'heuristic' };
-  return null;
-};
-
-const guessBookEncoding = (chm, sampleBytes) => {
-  const fromDoc = sampleBytes && guessDocEncoding(sampleBytes);
+const guessBookEncoding = (chm, sys, sampleBytes) => {
+  const fromDoc = sampleBytes && sniffEncoding(sampleBytes);
   if (fromDoc) return fromDoc;
 
   let lcid = chm.langId & 0xffff;
-  const langEntry = chm.parseSystem().get(4);
+  const langEntry = sys.get(4);
   if (langEntry && langEntry.length >= 4) lcid = (langEntry[0] | (langEntry[1] << 8)) & 0xffff;
 
   const fromLcid = LCID_CHARSETS[lcid];
@@ -50,7 +39,7 @@ const asciiz = (bytes) => {
   return view.length ? String.fromCharCode(...view) : null;
 };
 
-export const findSitemapEntries = (chm, sys) => {
+const findSitemapEntries = (chm, sys) => {
   let hhc = chm.resolve(normalizePath('/', asciiz(sys.get(0)) || ''));
   let hhk = chm.resolve(normalizePath('/', asciiz(sys.get(1)) || ''));
   for (const e of chm.entries) {
@@ -63,13 +52,12 @@ export const findSitemapEntries = (chm, sys) => {
 
 /** Serialize a sitemap tree with numeric ids and normalized locals. */
 const packTree = (root, basePath) => {
-  let nextId = 0;
-  const pack = (node) => ({
-    id: nextId++,
-    name: node.name,
-    local: node.local ? normalizePath(basePath, node.local) : null,
-    children: node.children.map(pack),
-  });
+  const node = nodeFactory();
+  const pack = (n) => node(
+    n.name,
+    n.local ? normalizePath(basePath, n.local) : null,
+    n.children.map(pack),
+  );
   return root.children.map(pack);
 };
 
@@ -77,8 +65,7 @@ const parseSitemapEntry = (chm, entry, encoding, mapper) => {
   if (!entry) return [];
   try {
     const raw = chm.retrieve(entry);
-    const enc = encoding ||
-      (guessDocEncoding(raw) || { encoding: 'utf-8' }).encoding;
+    const enc = encoding || sniffEncoding(raw)?.encoding || 'utf-8';
     return mapper(parseSitemap(decodeBytes(raw, enc)), entry.path);
   } catch {
     return [];
@@ -91,8 +78,7 @@ const parseSitemapEntry = (chm, entry, encoding, mapper) => {
  * stay navigable (idea borrowed from the jules branch).
  */
 export const fallbackTocFromPaths = (docPaths) => {
-  let nextId = 0;
-  const node = (name, local) => ({ id: nextId++, name, local, children: [] });
+  const node = nodeFactory();
   const nameOf = (p) => {
     const base = p.split('/').pop();
     return base.replace(/\.[^.]+$/, '') || base;
@@ -110,9 +96,7 @@ export const fallbackTocFromPaths = (docPaths) => {
   const tree = [];
   for (const [dir, paths] of byDir) {
     const label = dir === '/' ? '(root)' : dir.replace(/^\//, '');
-    const parent = node(label, null);
-    parent.children = paths.map((p) => node(nameOf(p), p));
-    tree.push(parent);
+    tree.push(node(label, null, paths.map((p) => node(nameOf(p), p))));
   }
   return tree;
 };
@@ -145,6 +129,12 @@ export const buildNav = (chm, sitemapEntries, encoding, docPathsForFallback = nu
   };
 };
 
+/** Every renderable (HTML) document in the archive, naturally sorted. */
+export const listDocPaths = (chm) => chm.entries
+  .filter((e) => /^\/(?![#$:])/.test(e.path) && !e.path.endsWith('/') && isHtmlPath(e.path))
+  .map((e) => e.path)
+  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
 /* ---------------- book opening ---------------- */
 
 /**
@@ -156,10 +146,7 @@ export function openBook(chm, { encodingOverride = null, fileSize = 0 } = {}) {
   const sys = chm.parseSystem();
   const sitemapEntries = findSitemapEntries(chm, sys);
 
-  const htmlPaths = chm.entries
-    .filter((e) => /^\/(?![#$:])/.test(e.path) && !e.path.endsWith('/') && isHtmlPath(e.path))
-    .map((e) => e.path)
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+  const htmlPaths = listDocPaths(chm);
 
   /* sample one document for book-level encoding detection; fall back to
    * a .txt chapter for script-driven novel archives without HTML */
@@ -172,7 +159,7 @@ export function openBook(chm, { encodingOverride = null, fileSize = 0 } = {}) {
       sample = chm.retrieve(entry, 0, Math.min(entry.length, 64 * 1024));
     } catch { /* ignore */ }
   }
-  const detected = guessBookEncoding(chm, sample);
+  const detected = guessBookEncoding(chm, sys, sample);
   const encoding = encodingOverride || detected.encoding;
 
   const { tocTree, indexList, syntheticDocPaths } =

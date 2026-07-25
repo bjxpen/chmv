@@ -2,6 +2,7 @@
 // GBK, no .hhc). Verifies encoding detection, synthetic TOC and
 // document.write extraction.
 import fs from 'node:fs';
+import { makeAsserter, fileReader } from './helpers.mjs';
 import { ChmFile } from '../src/engine/chm.js';
 import { openBook } from '../src/engine/book.js';
 import { isDocWriteJs, docWriteToHtml, parsePagesArray, plainTextToHtml } from '../src/engine/noveljs.js';
@@ -13,23 +14,9 @@ if (!fs.existsSync(chmPath)) {
   process.exit(0);
 }
 
-let passed = 0;
-const ok = (cond, name) => {
-  if (!cond) { console.error(`FAIL: ${name}`); process.exitCode = 1; } else passed++;
-};
-
-const fd = fs.openSync(chmPath, 'r');
-const reader = {
-  size: fs.fstatSync(fd).size,
-  read(off, len) {
-    const buf = Buffer.alloc(len);
-    const n = fs.readSync(fd, buf, 0, len, off);
-    return new Uint8Array(buf.buffer, 0, n);
-  },
-};
-
-const chm = ChmFile.open(reader);
-const { book } = openBook(chm, { fileSize: reader.size });
+const { ok, done } = makeAsserter('novel tests');
+const chm = ChmFile.open(fileReader(chmPath));
+const { book } = openBook(chm, { fileSize: chm.reader.size });
 
 ok(book.encoding === 'gbk', `book: GBK detected (got ${book.encoding})`);
 ok(book.title && book.title.includes('梦回天阙'), `book: CJK title decoded (got ${book.title})`);
@@ -75,4 +62,4 @@ ok(pages[0].volume === null, 'pages: <img …> 4th field is not a volume');
 ok(pages[1].volume === '第一集', 'pages: volume captured');
 ok(pages[2].title.includes("it's"), 'pages: escaped quote handled');
 
-console.log(`novel tests: ${passed} passed${process.exitCode ? ' (with failures)' : ''}`);
+done();

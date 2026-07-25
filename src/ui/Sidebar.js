@@ -40,6 +40,33 @@ const findPathTo = (nodes, local, trail = []) => {
 
 /* ---------------- components ---------------- */
 
+const CHILD_CHUNK = 400;
+
+/**
+ * Render a (possibly huge) sibling list in chunks: flat 3000-chapter
+ * TOCs mount ~400 rows and grow on demand instead of stalling the UI.
+ * Keeps the active chapter's chunk visible automatically.
+ */
+const NodeList = ({ nodes, depth, ctx }) => {
+  const [limit, setLimit] = useState(CHILD_CHUNK);
+  /* when filtering or when the active node sits past the limit, make
+   * sure the relevant rows are mounted */
+  const activeIdx = ctx.activeLocal
+    ? nodes.findIndex((n) => n.local && n.local.toLowerCase() === ctx.activeLocal.toLowerCase())
+    : -1;
+  const effective = ctx.filter.needle ? nodes.length
+    : Math.max(limit, activeIdx >= 0 ? activeIdx + CHILD_CHUNK / 2 : 0);
+  const shown = nodes.length > effective ? nodes.slice(0, effective) : nodes;
+  return html`
+    ${shown.map((c) => html`<${TreeNode} key=${c.id} node=${c} depth=${depth} ctx=${ctx} />`)}
+    ${shown.length < nodes.length && html`
+      <div class="tree-more">
+        <button class="btn" onClick=${() => setLimit(effective + CHILD_CHUNK * 2)}>
+          Show more (${nodes.length - shown.length} left)
+        </button>
+      </div>`}`;
+};
+
 const TreeNode = ({ node, depth, ctx }) => {
   const { expanded, toggle, onSelect, activeLocal, filter } = ctx;
   if (filter.needle && !filter.visible.has(node.id)) return null;
@@ -66,7 +93,7 @@ const TreeNode = ({ node, depth, ctx }) => {
       </div>
       ${hasKids && isOpen && html`
         <div class="tree-children">
-          ${node.children.map((c) => html`<${TreeNode} key=${c.id} node=${c} depth=${depth + 1} ctx=${ctx} />`)}
+          <${NodeList} nodes=${node.children} depth=${depth + 1} ctx=${ctx} />
         </div>`}
     </div>`;
 };
@@ -103,7 +130,7 @@ const TocPanel = ({ tree, activeLocal, filterText, onSelect }) => {
 
   if (!tree.length) return html`<div class="tree-empty">No table of contents in this file.</div>`;
   const ctx = { expanded, toggle, onSelect, activeLocal, filter, activeRef };
-  return html`${tree.map((n) => html`<${TreeNode} key=${n.id} node=${n} depth=${0} ctx=${ctx} />`)}`;
+  return html`<${NodeList} nodes=${tree} depth=${0} ctx=${ctx} />`;
 };
 
 const IndexPanel = ({ items, filterText, onSelect }) => {

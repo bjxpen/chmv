@@ -89,13 +89,15 @@ npm install
 npm run dev        # dev server
 npm run build      # production build (dist/)
 npm run preview    # serve the production build
-npm test           # unit + engine extraction tests (Node)
+npm test           # all suites: unit, store, renderer, novel, extraction
+npm run lint       # eslint over src/ and test/
 node test/store-test.mjs   # store integration flow with fakes
 ```
 
 `test/extract-test.mjs` extracts every entry of a fixture CHM and can
 byte-compare against a directory produced by CHMLib's `extract_chmLib`
-for decompressor verification.
+for decompressor verification. Shared test utilities (assertion counter,
+file reader, happy-dom bootstrap) live in `test/helpers.mjs`.
 
 ## License notes
 

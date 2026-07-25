@@ -1,14 +1,10 @@
 // Unit tests for hhc.js, paths.js, encodings.js (Node).
-import assert from 'node:assert/strict';
+import { makeAsserter } from './helpers.mjs';
 import { parseSitemap, flattenIndex, decodeEntities } from '../src/engine/hhc.js';
 import { normalizePath, fragmentOf, isHtmlPath, isExternalHref, mimeFor } from '../src/engine/paths.js';
 import { effectiveEncoding, canonicalCharset, looksLikeValidUtf8 } from '../src/engine/encodings.js';
 
-let passed = 0;
-function ok(cond, name) {
-  if (!cond) { console.error(`FAIL: ${name}`); process.exitCode = 1; }
-  else passed++;
-}
+const { ok, done } = makeAsserter('unit tests');
 
 /* ---------------- hhc ---------------- */
 const hhc = `
@@ -96,4 +92,4 @@ ok(grouped.length === 2 && grouped[0].name === 'v1' && grouped[0].children.lengt
   'fallback: groups by directory');
 ok(grouped[1].children[0].local === '/v2/c1.htm', 'fallback: children navigable');
 
-console.log(`unit tests: ${passed} passed${process.exitCode ? ' (with failures)' : ''}`);
+done();
