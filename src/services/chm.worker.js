@@ -70,7 +70,10 @@ class ChmEngine {
   /** (Re-)decode the TOC and keyword index with a given encoding. */
   sitemaps(encoding = null) {
     if (!this.#chm) return { tocTree: [], indexList: [] };
-    const { tocTree, indexList } = buildNav(this.#chm, this.#sitemaps, encoding);
+    const htmlPaths = this.#chm.entries
+      .filter((e) => /^\/(?![#$:])/.test(e.path) && isRenderablePath(e.path))
+      .map((e) => e.path);
+    const { tocTree, indexList } = buildNav(this.#chm, this.#sitemaps, encoding, htmlPaths);
     return { tocTree, indexList };
   }
 

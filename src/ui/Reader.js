@@ -123,21 +123,31 @@ function useChapterView(store, hostRef, scrollerRef) {
   return { onScroll };
 }
 
-const NavButtons = ({ store, edge }) => html`
-  <button class="nav-btn" disabled=${!store.hasPrev.value} title="Previous chapter (←)"
+const NavButtons = ({ store, edge }) => {
+  const pos = store.currentPos.value;
+  const spine = store.spine.value;
+  const prevLabel = pos > 0 ? store.tocLabelOf(spine[pos - 1]) : '';
+  const nextLabel = pos >= 0 && pos < spine.length - 1 ? store.tocLabelOf(spine[pos + 1]) : '';
+  return html`
+  <button class="nav-btn ${edge === 'bottom' ? 'labeled' : ''}"
+          disabled=${!store.hasPrev.value} title=${prevLabel || 'Previous chapter (←)'}
           onClick=${() => store.gotoSibling(-1)}>
-    ${edge === 'top' ? '‹ Prev' : '‹ Previous chapter'}
+    ${edge === 'top' ? '‹ Prev' : `‹ ${prevLabel || 'Previous chapter'}`}
   </button>
   ${edge === 'top' && html`
     <span class="nav-pos">
-      ${store.currentPos.value >= 0
-        ? `${store.currentPos.value + 1} / ${store.spine.value.length} · ${store.tocLabelOf(store.currentPath.value)}`
+      ${pos >= 0
+        ? `${pos + 1} / ${spine.length}` +
+          ` · ${Math.round(((pos + 1) / Math.max(1, spine.length)) * 100)}%` +
+          ` · ${store.tocLabelOf(store.currentPath.value)}`
         : ''}
     </span>`}
-  <button class="nav-btn" disabled=${!store.hasNext.value} title="Next chapter (→)"
+  <button class="nav-btn ${edge === 'bottom' ? 'labeled' : ''}"
+          disabled=${!store.hasNext.value} title=${nextLabel || 'Next chapter (→)'}
           onClick=${() => store.gotoSibling(1)}>
-    ${edge === 'top' ? 'Next ›' : 'Next chapter ›'}
+    ${edge === 'top' ? 'Next ›' : `${nextLabel || 'Next chapter'} ›`}
   </button>`;
+};
 
 const Splitter = ({ store }) => {
   const onPointerDown = (e) => {
@@ -192,7 +202,11 @@ export const Reader = ({ store }) => {
                   onClick=${() => store.goHome()}><${HomeIcon} /></button>
           <button class="icon-btn" title="Toggle sidebar (B)" aria-label="Toggle sidebar"
                   aria-pressed=${!s.sidebarHidden} onClick=${toggleSidebar}><${SidebarIcon} /></button>
-          <span class="book-title" role="heading" aria-level="1">${store.bookTitle.value}</span>
+          <div class="book-heading">
+            <span class="book-title" role="heading" aria-level="1">${store.bookTitle.value}</span>
+            ${store.currentPath.value && html`
+              <span class="book-subtitle">${store.tocLabelOf(store.currentPath.value)}</span>`}
+          </div>
         </div>
         <div class="topbar-group">
           <label class="enc-label" title="Text encoding"><span aria-hidden="true">文A</span></label>

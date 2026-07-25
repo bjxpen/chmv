@@ -12,6 +12,12 @@ locally in your browser: **no uploads, no external API calls**.
   decompressor ported from CHMLib/cabextract, running in a Web Worker.
   Archives are read as `File` slices on demand, so 100 MB+ books with
   thousands of chapters stay cheap on memory.
+- **Legacy novel templates** — archives with no `.hhc` at all (2000s
+  搜书吧-style novels) still work: chapters stored as `document.write()`
+  scripts are statically extracted (never executed), the `pages[]`
+  navigation array becomes a synthetic TOC with volume grouping, and
+  iframe/frameset shell pages are recursively inlined. Archives with no
+  recognizable structure get a directory-grouped fallback TOC.
 - **CJK-first encodings** — automatic detection (meta charset → BOM →
   UTF-8 validation → CHM locale id) with a one-click override for GBK,
   GB18030, Big5, Shift-JIS, EUC-JP/KR and more. Switching re-decodes the
@@ -47,6 +53,8 @@ src/
 │   ├── lzx.js         #   LZX (sliding-window Huffman) decompressor
 │   ├── chm.js         #   ITSF/ITSP container + block cache
 │   ├── hhc.js         #   .hhc/.hhk tag-soup sitemap parser
+│   ├── book.js        #   book assembly: encoding, nav, fallback TOC
+│   ├── noveljs.js     #   script-driven novel support (document.write)
 │   ├── encodings.js   #   charset aliases + detection heuristics
 │   └── paths.js       #   internal path resolution (ms-its:, mk:@MSITStore:)
 ├── services/          # I/O adapters
