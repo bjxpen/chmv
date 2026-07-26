@@ -64,6 +64,7 @@ export class Renderer {
     this.assetPending = new Map();
 
     this.overrideStyles = true;
+    this.runJs = false;
     this.bookEncoding = 'utf-8';
     this.encodingOverride = null;
 
@@ -74,6 +75,10 @@ export class Renderer {
   setStyleOverride(on) {
     this.overrideStyles = !!on;
     this._applyBaseStyle();
+  }
+
+  setRunJs(on) {
+    this.runJs = !!on;
   }
 
   setEncodings(bookEncoding, override) {
@@ -174,6 +179,8 @@ export class Renderer {
       styleEl.textContent = cssAll;
       section.insertBefore(styleEl, section.firstChild);
     }
+
+    await this._processScripts(section, path);
 
     return section;
   }
@@ -283,7 +290,9 @@ export class Renderer {
     }
 
     /* remove dangerous / irrelevant elements entirely */
-    const selector = [...DROP_TAGS].join(',');
+    const dropTags = new Set(DROP_TAGS);
+    if (this.runJs) dropTags.delete('script');
+    const selector = [...dropTags].join(',');
     for (const el of doc.querySelectorAll(selector)) el.remove();
 
     const walker = doc.createTreeWalker(doc.documentElement, NodeFilter.SHOW_ELEMENT);
@@ -294,7 +303,7 @@ export class Renderer {
       /* strip event handlers and javascript: URLs */
       for (const attr of [...el.attributes]) {
         const name = attr.name.toLowerCase();
-        if (name.startsWith('on')) el.removeAttribute(attr.name);
+        if (!this.runJs && name.startsWith('on')) el.removeAttribute(attr.name);
         else if ((name === 'href' || name === 'src' || name === 'action') &&
                  /^\s*(javascript|vbscript|data:text\/html)/i.test(attr.value)) {
           el.removeAttribute(attr.name);
@@ -307,6 +316,41 @@ export class Renderer {
           el.removeAttribute(a);
         }
       }
+    }
+  }
+
+  async _processScripts(section, docPath) {
+    if (!this.runJs) return;
+    const scripts = [...section.querySelectorAll('script')];
+    for (const old of scripts) {
+      const subframe = old.closest ? old.closest('.subframe') : null;
+      const basePath = (subframe && subframe.dataset.path) ? subframe.dataset.path : docPath;
+      const newScript = document.createElement('script');
+      let srcResolved = false;
+      for (const attr of [...old.attributes]) {
+        const name = attr.name.toLowerCase();
+        if (name === 'src') {
+          const src = attr.value;
+          if (!isExternalHref(src)) {
+            const p = normalizePath(basePath, src);
+            if (p) {
+              const asset = await this._fetchRaw(p);
+              if (asset) {
+                newScript.textContent = decodeBytes(new Uint8Array(asset.buffer), 'utf-8');
+                srcResolved = true;
+                continue;
+              }
+            }
+          }
+          newScript.setAttribute('src', src);
+        } else {
+          newScript.setAttribute(attr.name, attr.value);
+        }
+      }
+      if (!newScript.hasAttribute('src') && !srcResolved) {
+        newScript.textContent = old.textContent || '';
+      }
+      old.parentNode.replaceChild(newScript, old);
     }
   }
 

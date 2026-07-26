@@ -76,10 +76,14 @@ export const SettingsPanel = ({ store, onClose }) => {
                    onInput=${(paraSpacing) => set({ paraSpacing })} />
       </div>
       <div class="set-group">
-        <${Check} checked=${s.overrideStyles}
-                  onChange=${(overrideStyles) => set({ overrideStyles })}
-                  title="Override legacy page styles"
-                  hint="Strip hardcoded colors & fonts from vintage HTML" />
+        <${Check} checked=${!s.overrideStyles}
+                  onChange=${(keep) => set({ overrideStyles: !keep })}
+                  title="Keep page styles"
+                  hint="Keep original page colors, fonts and layout" />
+        <${Check} checked=${s.runJs}
+                  onChange=${(runJs) => set({ runJs })}
+                  title="Run page JavaScript"
+                  hint="Allow scripts from the CHM page to execute" />
         <${Check} checked=${s.scrollMode === 'infinite'}
                   onChange=${(on) => set({ scrollMode: on ? 'infinite' : 'paged' })}
                   title="Continuous scroll"
