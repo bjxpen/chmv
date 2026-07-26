@@ -193,7 +193,7 @@ export function rewriteScriptNav(src) {
           while (j < len && (src[j] === ' ' || src[j] === '\t')) j++;
           const { text, end: rhsEnd } = readRhs(j);
           if (text) {
-            out += `parent.${NAVIGATE_GLOBAL}(${text})`;
+            out += `${NAVIGATE_GLOBAL}(${text})`;
             i = rhsEnd;
             continue;
           }
@@ -207,7 +207,7 @@ export function rewriteScriptNav(src) {
           while (k < len && (src[k] === ' ' || src[k] === '\t')) k++;
           if (src[k] === ')') k++;
           if (text) {
-            out += `parent.${NAVIGATE_GLOBAL}(${text})`;
+            out += `${NAVIGATE_GLOBAL}(${text})`;
             i = k;
             continue;
           }

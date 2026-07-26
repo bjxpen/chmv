@@ -14,7 +14,7 @@ import { normalizePath, fragmentOf, isExternalHref, isTextPath, isRenderablePath
 import { effectiveEncoding, decodeBytes } from '../engine/encodings.js';
 import { isDocWriteJs, docWriteToHtml, plainTextToHtml } from '../engine/noveljs.js';
 import { baseChapterCss } from './chapter-css.js';
-import { rewriteScriptNav, NAVIGATE_GLOBAL } from './nav-rewriter.js';
+import { rewriteScriptNav } from './nav-rewriter.js';
 import shimSource from './runjs-shim.js';
 
 const DROP_TAGS = new Set([
@@ -35,8 +35,6 @@ const SUBFRAME_CLASS = 'subframe';
 const SUBFRAME_SELECTOR = `.${SUBFRAME_CLASS}`;
 const IFRAME_BLOB_PREFIX = '__iframe__:';
 const IFRAME_MSG_SOURCE = 'chmv-iframe';
-const NAV_COUNTER_GLOBAL = '__chmvNavCounter';
-const BLOBS_GLOBAL = '__chmvBlobs';
 /* Resource attributes the renderer rewrites to blob: URLs. Used by
  * _collectResourceRefs, _rewriteStaticUrls, and the shim's rewriteHtml. */
 const RESOURCE_ATTRS = ['src', 'href', 'background', 'poster'];
@@ -75,6 +73,7 @@ export class Renderer {
     this.runJsBlobs = null;
     this.runJsBlobsPending = new Map(); /* in-flight dedup (path → promise) */
     this._disposed = false;
+    this._lastNavSeq = 0; /* highest navigate seq seen (stale-msg suppression) */
 
     this.overrideStyles = true;
     this.runJs = false;
@@ -158,15 +157,12 @@ export class Renderer {
       this.runJsBlobs = null;
     }
     this.runJsBlobsPending.clear();
-    /* Clean up the window-scoped nav counter + shim globals so a fresh
-     * Renderer instance starts from a clean slate. */
-    try { delete window[NAV_COUNTER_GLOBAL]; } catch { /* read-only */ }
-    try { delete window[NAVIGATE_GLOBAL]; } catch { /* read-only */ }
-    try { delete window[BLOBS_GLOBAL]; } catch { /* read-only */ }
+    this._lastNavSeq = 0;
     /* Note: we intentionally do NOT remove the shadow 'click' or window
      * 'message' listeners here — they are cheap and the test suite reuses
      * a renderer after dispose(). In production dispose() is final, so
-     * leaving them has no effect. A truly final teardown would remove them. */
+     * leaving them has no effect. A truly final teardown would remove them.
+     * No window globals to clean up — the shim uses postMessage only. */
   }
 
   async _buildSection(path, bytes) {
@@ -336,18 +332,18 @@ export class Renderer {
     const shim = this._buildRunJsShim(target);
     const htmlDoc = `<!DOCTYPE html><html><head>${styleTags.join('')}${shim}</head>` +
       tempBody.innerHTML + `</html>`;
-    /* Serve the sub-frame as a blob: URL rather than srcdoc. Blob
-     * URLs inherit the parent's origin, so the iframe (with
-     * allow-same-origin) can synchronously access parent-created
-     * blob: URLs for inlined assets — and on file:// it sidesteps
-     * the about:srcdoc→parent-URL "unique origin" load warning. */
+    /* Serve the sub-frame as a blob: URL. On file:// the blob: iframe
+     * gets origin "null" (cross-origin to the parent), so the iframe
+     * has sandbox="allow-scripts" only (NO allow-same-origin) and
+     * communicates with the parent exclusively via postMessage. This
+     * works on both http:// and file:// without SecurityError. */
     const blob = new Blob([htmlDoc], { type: 'text/html' });
     const blobUrl = URL.createObjectURL(blob);
     const wrapper = doc.createElement('div');
     wrapper.className = SUBFRAME_CLASS;
     wrapper.dataset.path = target;
     const iframe = doc.createElement('iframe');
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    iframe.setAttribute('sandbox', 'allow-scripts');
     iframe.setAttribute('frameborder', '0');
     iframe.style.cssText = 'width:100%;height:100%;border:none;';
     iframe.src = blobUrl;
@@ -547,50 +543,58 @@ export class Renderer {
 
   /**
    * Build the runtime shim <script> for a runJs sub-frame. The shim
-   * source lives in runjs-shim.js (?raw import) so it gets proper syntax
-   * highlighting and no quadruple-escaped regex. Token-replaces the
-   * global-name placeholders + base path, and exposes the live
-   * runJsBlobs Map on parent[BLOBS_GLOBAL] so the shim reads it at
-   * runtime (no embedded JSON snapshot — stays small and stays fresh).
+   * source lives in runjs-shim.js (imported as a string). Token-replaces
+   * the placeholders: embeds the BLOBS map as JSON (snapshot of
+   * currently-cached blob URLs), the base path, and the message source.
+   *
+   * The BLOBS map is embedded (not read live from parent) because on
+   * file:// the blob: URL iframe has origin "null" and can't access
+   * parent.* — see runjs-shim.js header for details. Cache misses send
+   * a request-blob postMessage; the parent fetches + sends back a
+   * response-blob message that the shim merges into its local BLOBS.
    */
   _buildRunJsShim(basePath) {
-    /* Expose the live blob Map on the parent window so the shim's
-     * resolve() reads it directly. This avoids embedding a JSON
-     * snapshot (which inflated every iframe by KBs and went stale
-     * when request-blob warmed the cache post-serialization). */
-    if (this.runJsBlobs) window[BLOBS_GLOBAL] = this.runJsBlobs;
+    const blobsJson = this.runJsBlobs
+      ? JSON.stringify(Object.fromEntries(this.runJsBlobs))
+      : '{}';
     const filled = shimSource
-      .replaceAll('__BLOBS_GLOBAL__', BLOBS_GLOBAL)
+      .replaceAll('__BLOBS_JSON__', blobsJson)
       .replaceAll('__BASE_PATH_JSON__', JSON.stringify(basePath))
-      .replaceAll('__IFRAME_MSG_SOURCE__', IFRAME_MSG_SOURCE)
-      .replaceAll('__NAV_COUNTER_GLOBAL__', NAV_COUNTER_GLOBAL)
-      .replaceAll('__NAVIGATE_GLOBAL__', NAVIGATE_GLOBAL);
+      .replaceAll('__IFRAME_MSG_SOURCE__', IFRAME_MSG_SOURCE);
     return `<script>${filled}</script>`;
   }
 
   /** Route chmv-iframe messages: navigate requests go to onNavigate,
-   *  request-blob (shim cache miss) triggers a lazy fetch+cache so the
-   *  next render of the same page finds it pre-built. */
+   *  request-blob (shim cache miss) triggers a lazy fetch+cache and
+   *  sends the blob URL back to the iframe via response-blob so
+   *  subsequent document.write calls find it locally. */
   _onIframeMessage(e) {
     const d = e.data;
     if (!d || d.source !== IFRAME_MSG_SOURCE) return;
     if (d.type === 'navigate') {
-      /* Suppress stale navigations: each iframe bumps parent.__chmvNavCounter
-       * (shared across sub-frames); we only honor seqs >= the current
-       * counter, and bump the counter to the accepted seq so older
-       * messages from unmounted iframes are dropped. */
-      const counter = window[NAV_COUNTER_GLOBAL] || 0;
-      if (typeof d.seq === 'number' && d.seq < counter) return;
-      if (typeof d.seq === 'number') window[NAV_COUNTER_GLOBAL] = d.seq;
+      /* Stale-message suppression: track the highest seq seen so
+       * navigations from unmounted iframes (lower seq) are dropped.
+       * The counter is per-Renderer (not on window) to avoid global
+       * pollution. The shim bumps its own local navSeq per call. */
+      if (typeof d.seq === 'number') {
+        if (d.seq <= this._lastNavSeq) return;
+        this._lastNavSeq = d.seq;
+      }
       if (this.hooks.onNavigate && d.path) {
         this.hooks.onNavigate(d.path, '');
       }
     } else if (d.type === 'request-blob' && d.path) {
-      /* Shim cache miss — fetch & cache for next time. The current
-       * document.write already fell back to the raw URL (404), but
-       * this warms the cache so the next navigation to the same page
-       * finds the blob pre-built. */
-      this._getBlobForPath(d.path).catch(() => {});
+      /* Shim cache miss — fetch, cache, and send the URL back to the
+       * iframe so its local BLOBS map is updated for subsequent
+       * document.write calls in the same iframe. */
+      this._getBlobForPath(d.path).then((url) => {
+        if (url && e.source) {
+          e.source.postMessage({
+            source: 'chmv-parent', type: 'response-blob',
+            path: d.path, url,
+          }, '*');
+        }
+      }).catch(() => {});
     }
   }
 

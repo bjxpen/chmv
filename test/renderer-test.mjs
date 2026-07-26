@@ -247,8 +247,8 @@ const hijackBlobUrl = hijackIframe?.getAttribute('src') || '';
 const hijackBlob = hijackBlobs.get(hijackBlobUrl);
 ok(hijackBlob, 'renderer: runJs iframe blob captured by mock');
 const hijackText = await hijackBlob.text();
-ok(/parent\.__chmvNavigate/.test(hijackText),
-  'renderer: runJs shim defines parent.__chmvNavigate');
+ok(/__chmvNavigate/.test(hijackText),
+  'renderer: runJs shim defines __chmvNavigate');
 ok(/document\.write\s*=\s*function/.test(hijackText),
   'renderer: runJs shim overrides document.write');
 ok(/addEventListener\(.click/.test(hijackText),
@@ -257,22 +257,23 @@ ok(/BLOBS\s*=/.test(hijackText),
   'renderer: runJs shim embeds blob map');
 ok(/request-blob/.test(hijackText),
   'renderer: runJs shim has request-blob fallback for cache misses');
-/* The shim now reads parent.__chmvBlobs LIVE (no embedded snapshot),
- * so the iframe HTML stays small. Verify the shim references the live
- * global instead of an embedded JSON blob map. */
-ok(/parent\[.__chmvBlobs.\]/.test(hijackText) || /__chmvBlobs/.test(hijackText),
-  'renderer: runJs shim reads parent.__chmvBlobs live (no embedded snapshot)');
-ok(!/var BLOBS=\{[^}]{100,}/.test(hijackText),
-  'renderer: runJs shim does NOT embed a large JSON blob snapshot');
+/* The shim embeds the BLOBS map as JSON (not live parent read) because
+ * cross-origin parent access is blocked on file://. Verify the embedded
+ * map is present and references blob URLs. */
+ok(/var BLOBS\s*=/.test(hijackText),
+  'renderer: runJs shim embeds BLOBS JSON snapshot');
+ok(/response-blob/.test(hijackText),
+  'renderer: runJs shim handles response-blob messages from parent');
 /* static resource URLs rewritten to blob: in the iframe HTML */
 const hijackBlobRefs = (hijackText.match(/blob:hijack\/\d+/g) || []).length;
 ok(hijackBlobRefs > 0,
   `renderer: runJs iframe HTML references blob URLs (${hijackBlobRefs})`);
-/* document.location = ... in inlined scripts rewritten to parent.__chmvNavigate */
-ok(/parent\.__chmvNavigate\(/.test(hijackText),
-  'renderer: runJs document.location calls rewritten to parent.__chmvNavigate');
-/* navigation postMessage routes to onNavigate */
-window.__chmvNavCounter = 0;
+/* document.location = ... in inlined scripts rewritten to __chmvNavigate */
+ok(/__chmvNavigate\(/.test(hijackText),
+  'renderer: runJs document.location calls rewritten to __chmvNavigate');
+/* navigation postMessage routes to onNavigate. The seq counter is now
+ * per-Renderer (_lastNavSeq), not on window — reset it for the test. */
+hijackRenderer._lastNavSeq = 0;
 hijackRenderer._onIframeMessage({
   data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/chapter.htm', seq: 1 },
 });
@@ -371,13 +372,13 @@ const navRenderer = new Renderer(win.document.createElement('div'), {
 });
 navRenderer.setRunJs(true);
 const nr = (src) => navRenderer._rewriteScriptNav(src);
-ok(nr('document.location.href = "x";') === 'parent.__chmvNavigate("x");',
+ok(nr('document.location.href = "x";') === '__chmvNavigate("x");',
   `nav: document.location.href rewritten (${nr('document.location.href = "x";')})`);
 ok(nr('if (location.href == "x") {}') === 'if (location.href == "x") {}',
   `nav: == not treated as assignment`);
 ok(nr('if (location.href === "x") {}') === 'if (location.href === "x") {}',
   `nav: === not treated as assignment`);
-ok(nr('location.href = f("a","b");') === 'parent.__chmvNavigate(f("a","b"));',
+ok(nr('location.href = f("a","b");') === '__chmvNavigate(f("a","b"));',
   `nav: function-call RHS with commas preserved`);
 ok(nr('var s = "location.href = \'x\'";') === 'var s = "location.href = \'x\'";',
   `nav: string literal contents not rewritten`);
@@ -389,9 +390,9 @@ ok(nr('obj.location = "x";') === 'obj.location = "x";',
   `nav: obj.location (property access) not rewritten`);
 ok(nr('location.hash = "#foo";') === 'location.hash = "#foo";',
   `nav: location.hash not rewritten`);
-ok(nr('location.assign("x");') === 'parent.__chmvNavigate("x");',
+ok(nr('location.assign("x");') === '__chmvNavigate("x");',
   `nav: location.assign() call rewritten`);
-ok(nr('location.replace("x");') === 'parent.__chmvNavigate("x");',
+ok(nr('location.replace("x");') === '__chmvNavigate("x");',
   `nav: location.replace() call rewritten`);
 navRenderer.dispose();
 
