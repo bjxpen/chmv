@@ -29,20 +29,11 @@ const LEGACY_PRESENTATION_ATTRS = [
 ];
 
 export class Renderer {
-  /**
-   * @param {HTMLElement} host element that owns the shadow root
-   * @param {{
-   *   fetchAsset: (path: string) => Promise<{found: boolean, mime?: string, buffer?: ArrayBuffer}>,
-   *   onNavigate: (path: string, fragment: string) => void,
-   * }} hooks
-   */
   constructor(host, hooks) {
     this.host = host;
     this.hooks = hooks;
     this.shadow = host.attachShadow({ mode: 'open' });
 
-    /* base stylesheet: typography + theme variables come from the host
-     * via CSS custom properties that pierce the shadow boundary. */
     this.baseStyle = document.createElement('style');
     this.shadow.appendChild(this.baseStyle);
 
@@ -50,17 +41,10 @@ export class Renderer {
     this.container.className = 'chapters';
     this.shadow.appendChild(this.container);
 
-    /* blob bookkeeping: section element -> Set<assetPath> (deduped per
-     * section; refcounts in assetCache are per-section, not per-use) */
     this.sectionBlobs = new Map();
-    /* shared refcounted asset cache (lower path -> {url, refs, size}).
-     * Assets referenced by no section are kept in an LRU pool so
-     * chapter-to-chapter navigation reuses common template images
-     * instead of revoke+refetch+recreate. */
     this.assetCache = new Map();
-    this.idlePool = [];               /* lower paths with refs === 0, LRU order */
-    this.idlePoolBudget = 12 * 1024 * 1024; /* bytes kept alive while unreferenced */
-    /* in-flight fetches so concurrent uses of one asset share a request */
+    this.idlePool = [];
+    this.idlePoolBudget = 12 * 1024 * 1024;
     this.assetPending = new Map();
 
     this.overrideStyles = true;
@@ -90,18 +74,11 @@ export class Renderer {
     this.baseStyle.textContent = baseChapterCss(this.overrideStyles);
   }
 
-  /* ---------------------------------------------------------------- */
-
-  /**
-   * Render a document, replacing all current sections.
-   * @returns {Promise<HTMLElement>} the rendered section
-   */
   async renderChapter(path, bytes) {
     this.clear();
     return this.appendChapter(path, bytes);
   }
 
-  /** Append a document as a new section (infinite-scroll mode). */
   async appendChapter(path, bytes, { divider = false, title = '' } = {}) {
     const section = await this._buildSection(path, bytes);
     if (divider && this.container.children.length > 0) {
@@ -109,14 +86,12 @@ export class Renderer {
       div.className = 'chapter-divider';
       div.textContent = title || path.split('/').pop();
       this.container.appendChild(div);
-      /* divider belongs to this section for pruning purposes */
       section._divider = div;
     }
     this.container.appendChild(section);
     return section;
   }
 
-  /** Remove one section and revoke its blob URLs. */
   removeSection(section) {
     const blobs = this.sectionBlobs.get(section);
     if (blobs) {
@@ -127,16 +102,11 @@ export class Renderer {
     section.remove();
   }
 
-  /**
-   * Remove all sections. Unreferenced assets stay parked in the idle
-   * pool (bounded) so the next chapter can reuse shared images.
-   */
   clear() {
     for (const section of [...this.sectionBlobs.keys()]) this.removeSection(section);
     this.container.textContent = '';
   }
 
-  /** Full teardown (book closed): revoke every object URL. */
   dispose() {
     this.clear();
     for (const [key, rec] of this.assetCache) {
@@ -147,11 +117,8 @@ export class Renderer {
     this.assetPending.clear();
   }
 
-  /* ---------------------------------------------------------------- */
-
   async _buildSection(path, bytes) {
     const raw = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-
     const section = document.createElement('section');
     section.className = 'doc';
     section.dataset.path = path;
@@ -161,8 +128,6 @@ export class Renderer {
     const { fragment, styleTexts } = await this._buildContent(path, raw, blobs, 0);
     section.appendChild(fragment);
 
-    /* attach document styles (scoped by cascade: section styles live
-     * inside the shadow root already) */
     if (!this.overrideStyles && styleTexts.length) {
       const styleEl = document.createElement('style');
       let cssAll = '';
@@ -181,36 +146,21 @@ export class Renderer {
     }
 
     await this._processScripts(section, path);
-
     return section;
   }
 
-  /**
-   * Decode, convert, sanitize and asset-resolve one document into a
-   * DocumentFragment. Recurses (depth-limited) into internal iframe /
-   * frame sources so legacy shell pages render their actual content
-   * inline instead of an empty frame.
-   */
   async _buildContent(path, raw, blobs, depth) {
     const encoding = effectiveEncoding(raw, this.encodingOverride, this.bookEncoding);
     let html = decodeBytes(raw, encoding);
 
-    /* script-driven novel chapters (.txt with document.write) and plain
-     * text files are converted to clean HTML before parsing */
     if (isTextPath(path)) {
       html = isDocWriteJs(html) ? docWriteToHtml(html) : plainTextToHtml(html);
     }
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
-
-    /* collect document stylesheets before sanitization removes <link> */
     const styleTexts = [];
-
-    /* inline internal sub-frames before sanitization drops them */
     await this._inlineFrames(doc, path, blobs, depth, styleTexts);
 
-    /* frameset docs: DOMParser puts <frameset> in the body slot; unwrap
-     * it into a plain container so inlined subframes survive sanitization */
     for (const fs of [...doc.querySelectorAll('frameset')].reverse()) {
       const div = doc.createElement('div');
       while (fs.firstChild) div.appendChild(fs.firstChild);
@@ -239,19 +189,12 @@ export class Renderer {
     const fragment = document.createDocumentFragment();
     while (body.firstChild) fragment.appendChild(body.firstChild);
 
-    /* resolve assets referenced from the content */
     await this._resolveAssets(fragment, path, blobs);
-
     return { fragment, styleTexts };
   }
 
-  /**
-   * Replace internal <iframe>/<frame> elements with their (recursively
-   * built) content. Very common in legacy CJK novel shells and frameset
-   * technical docs, where the entry page is just a frame wrapper.
-   */
   async _inlineFrames(doc, docPath, blobs, depth, styleTexts) {
-    if (depth >= 2) return; /* avoid cycles / pathological nesting */
+    if (depth >= 2) return;
     const frames = [...doc.querySelectorAll('iframe[src], frame[src]')];
     for (const frame of frames) {
       const src = frame.getAttribute('src');
@@ -260,6 +203,29 @@ export class Renderer {
       if (!target || !isRenderablePath(target)) continue;
       const asset = await this._fetchRaw(target);
       if (!asset) continue;
+
+      if (this.runJs) {
+        const subFragment = await this._buildContent(
+          target, new Uint8Array(asset.buffer), blobs, depth + 1);
+        const tempBody = doc.createElement('body');
+        tempBody.appendChild(subFragment.fragment.cloneNode(true));
+        const htmlDoc = `<!DOCTYPE html><html><head><base href="/">` +
+          (subFragment.styleTexts.map(st => `<style>${st.css}</style>`).join('')) +
+          `</head>` + tempBody.innerHTML + `</html>`;
+        const wrapper = doc.createElement('div');
+        wrapper.className = 'subframe';
+        wrapper.dataset.path = target;
+        const iframe = doc.createElement('iframe');
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+        iframe.setAttribute('frameborder', '0');
+        iframe.style.cssText = 'width:100%;height:100%;border:none;';
+        iframe.srcdoc = htmlDoc;
+        wrapper.appendChild(iframe);
+        frame.replaceWith(wrapper);
+        styleTexts.push(...subFragment.styleTexts);
+        continue;
+      }
+
       try {
         const { fragment, styleTexts: subStyles } = await this._buildContent(
           target, new Uint8Array(asset.buffer), blobs, depth + 1);
@@ -269,38 +235,44 @@ export class Renderer {
         wrapper.dataset.path = target;
         wrapper.appendChild(fragment);
         frame.replaceWith(wrapper);
-      } catch { /* leave the frame; sanitizer will turn it into a link */ }
+      } catch { }
     }
   }
 
   _sanitize(doc) {
-    /* legacy frame shells: replace iframe/frame with a link to the target
-     * document instead of silently dropping it (common CHM entry pages
-     * are nothing but an <iframe src="index.htm">) */
-    for (const frame of doc.querySelectorAll('iframe[src], frame[src]')) {
-      const src = frame.getAttribute('src');
-      if (src && !isExternalHref(src)) {
-        const p = doc.createElement('p');
-        const a = doc.createElement('a');
-        a.setAttribute('href', src);
-        a.textContent = `→ ${src}`;
-        p.appendChild(a);
-        frame.replaceWith(p);
+    if (!this.runJs) {
+      for (const frame of doc.querySelectorAll('iframe[src], frame[src]')) {
+        const src = frame.getAttribute('src');
+        if (src && !isExternalHref(src)) {
+          const p = doc.createElement('p');
+          const a = doc.createElement('a');
+          a.setAttribute('href', src);
+          a.textContent = `→ ${src}`;
+          p.appendChild(a);
+          frame.replaceWith(p);
+        }
       }
     }
 
-    /* remove dangerous / irrelevant elements entirely */
     const dropTags = new Set(DROP_TAGS);
     if (this.runJs) dropTags.delete('script');
     const selector = [...dropTags].join(',');
-    for (const el of doc.querySelectorAll(selector)) el.remove();
+    for (const el of doc.querySelectorAll(selector)) {
+      /* Sandbox iframes we created in _inlineFrames live inside a
+       * .subframe wrapper. They are <iframe sandbox srcdoc> elements we
+       * control; without this exemption, 'iframe' in DROP_TAGS would
+       * delete them and sub-frames would never actually run in runJs
+       * mode. Other elements inside .subframe were already sanitized
+       * by the recursive _buildContent call, so this is a no-op there. */
+      if (el.closest('.subframe')) continue;
+      el.remove();
+    }
 
     const walker = doc.createTreeWalker(doc.documentElement, NodeFilter.SHOW_ELEMENT);
     const els = [];
     while (walker.nextNode()) els.push(walker.currentNode);
 
     for (const el of els) {
-      /* strip event handlers and javascript: URLs */
       for (const attr of [...el.attributes]) {
         const name = attr.name.toLowerCase();
         if (!this.runJs && name.startsWith('on')) el.removeAttribute(attr.name);
@@ -356,9 +328,6 @@ export class Renderer {
 
   async _resolveAssets(rootEl, docPath, blobs) {
     const jobs = [];
-
-    /* subframe content was already resolved against its own base path
-     * during recursion — don't re-process it with the wrong base */
     const inSubframe = (el) => el.closest && el.closest('.subframe') !== null;
 
     for (const img of rootEl.querySelectorAll('img[src], input[type="image"][src]')) {
@@ -379,7 +348,6 @@ export class Renderer {
       );
     }
 
-    /* inline style="background: url(...)" references */
     if (!this.overrideStyles) {
       for (const el of rootEl.querySelectorAll('[style*="url(" i]')) {
         const style = el.getAttribute('style') || '';
@@ -391,9 +359,8 @@ export class Renderer {
       }
     }
 
-    /* mark internal links for the click handler */
     for (const a of rootEl.querySelectorAll('a[href]')) {
-      if (a.dataset.internalHref) continue; /* already handled in a subframe pass */
+      if (a.dataset.internalHref) continue;
       const href = a.getAttribute('href');
       if (!href) continue;
       if (isExternalHref(href)) {
@@ -409,11 +376,9 @@ export class Renderer {
     await Promise.all(jobs);
   }
 
-  /** rewrite url(...) and @import inside CSS text to blob URLs */
   async _rewriteCss(css, basePath, blobs, depth) {
     if (depth > 3) return css;
 
-    /* @import "x.css" / @import url(x.css) — inline them */
     const importRe = /@import\s+(?:url\(\s*)?["']?([^"')\s]+)["']?\s*\)?\s*;/gi;
     const imports = [...css.matchAll(importRe)];
     for (const m of imports) {
@@ -458,13 +423,6 @@ export class Renderer {
     }
   }
 
-  /**
-   * Get (or create) a blob URL for an internal asset, refcounted **per
-   * section**: the caller passes the section's `blobs` set, and the ref
-   * is only incremented the first time this section uses the asset —
-   * matching the single release performed in removeSection(). Concurrent
-   * requests for one asset share a single fetch.
-   */
   async _acquireAsset(path, blobs) {
     const key = path.toLowerCase();
 
@@ -480,7 +438,6 @@ export class Renderer {
     const cached = this.assetCache.get(key);
     if (cached) return grab(cached);
 
-    /* share an in-flight fetch instead of decompressing twice */
     let pending = this.assetPending.get(key);
     if (!pending) {
       pending = this._fetchRaw(path).then((res) => {
@@ -502,9 +459,6 @@ export class Renderer {
     if (!rec) return;
     if (--rec.refs <= 0) {
       rec.refs = 0;
-      /* park in the idle LRU pool instead of revoking immediately:
-       * template images shared across chapters get reused on the next
-       * navigation instead of refetch + re-decompress + new blob */
       this.idlePool.push(key);
       this._trimIdlePool();
     }
@@ -539,7 +493,6 @@ export class Renderer {
     const fragment = fragmentOf(href);
     const path = normalizePath(base, href);
     if (!path || path === '/') {
-      /* pure fragment link: scroll within the current section */
       if (fragment) this.scrollToFragment(a.closest('section.doc'), fragment);
       return;
     }

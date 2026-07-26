@@ -98,35 +98,39 @@ export function createStore({ createEngine, library, hashFile }) {
 
   /* ---------------- persistence ---------------- */
 
-  const refreshShelf = async () => {
-    shelf.value = await library.listBooks().catch(() => []);
+  const persistence = {
+    refreshShelf: async () => {
+      shelf.value = await library.listBooks().catch(() => []);
+    },
+    saveProgress: async () => {
+      if (!session.hash || !currentPath.value) return;
+      const { scroll, ratio } = view.getScrollState();
+      const pos = currentPos.value;
+      const progress = Math.max(0, Math.min(1,
+        (pos + Math.min(1, ratio)) / Math.max(1, spine.value.length)));
+
+      const record = (await library.getBook(session.hash)) || { hash: session.hash };
+      await library.putBook({
+        ...record,
+        fileName: session.file?.name ?? record.fileName,
+        title: bookTitle.value,
+        fileSize: session.file?.size ?? record.fileSize,
+        chapter: currentPath.value,
+        scroll,
+        progress,
+        encoding: encodingOverride.value,
+        lastOpened: Date.now(),
+      }).catch(() => {});
+    },
+    scheduleSave: () => {
+      clearTimeout(session.saveTimer);
+      session.saveTimer = setTimeout(persistence.saveProgress, 800);
+    },
   };
 
-  const saveProgress = async () => {
-    if (!session.hash || !currentPath.value) return;
-    const { scroll, ratio } = view.getScrollState();
-    const pos = currentPos.value;
-    const progress = Math.max(0, Math.min(1,
-      (pos + Math.min(1, ratio)) / Math.max(1, spine.value.length)));
-
-    const record = (await library.getBook(session.hash)) || { hash: session.hash };
-    await library.putBook({
-      ...record,
-      fileName: session.file?.name ?? record.fileName,
-      title: bookTitle.value,
-      fileSize: session.file?.size ?? record.fileSize,
-      chapter: currentPath.value,
-      scroll,
-      progress,
-      encoding: encodingOverride.value,
-      lastOpened: Date.now(),
-    }).catch(() => {});
-  };
-
-  const scheduleSave = () => {
-    clearTimeout(session.saveTimer);
-    session.saveTimer = setTimeout(saveProgress, 800);
-  };
+  const refreshShelf = persistence.refreshShelf;
+  const saveProgress = persistence.saveProgress;
+  const scheduleSave = persistence.scheduleSave;
 
   /* ---------------- actions ---------------- */
 
@@ -191,6 +195,31 @@ export function createStore({ createEngine, library, hashFile }) {
       session = { ...session, engine, file, hash };
       const title = publishBook(info, file, override);
 
+      /* Make entry/home/index page visible and first in reader */
+      const commonEntryNames = ['/start.htm', '/index.htm', '/default.htm', '/home.htm'];
+      let insertedEntry = null;
+      for (const name of commonEntryNames) {
+        try {
+          const asset = await session.engine.get(name);
+          if (asset && asset.found && !spineIndex.value.has(name.toLowerCase())) {
+            const currentSpine = spine.value;
+            spine.value = [name, ...currentSpine];
+            insertedEntry = name;
+            break;
+          }
+        } catch { /* ignore */ }
+      }
+      /* Synthetic tocTree node so sidebar label reflects inserted entry */
+      if (insertedEntry) {
+        const syntheticName = insertedEntry === '/start.htm' ? 'Start' :
+          insertedEntry === '/index.htm' ? 'Index' :
+          insertedEntry.split('/').pop().replace(/\.htm$/i, '') || 'Home';
+        toc.value = {
+          tocTree: [{ local: insertedEntry, name: syntheticName, children: [] }, ...toc.value.tocTree],
+          indexList: toc.value.indexList,
+        };
+      }
+
       await library.putBook({
         chapter: null, scroll: 0, progress: 0, firstOpened: Date.now(),
         ...saved,
@@ -211,7 +240,26 @@ export function createStore({ createEngine, library, hashFile }) {
   const navigateTo = async (path, { fragment = '', scrollTo = 0 } = {}) => {
     if (!session.engine) return;
     const token = ++session.navToken;
-    loading.value = 'Loading chapter…';
+
+    /* Delay mechanism: don't flash "Loading" for very fast navigation */
+    const DELAY_SHOW_MS = 500;
+    const DELAY_LONG_MS = 1000;
+    let loadingTimer = null;
+    let longTimer = null;
+
+    /* Only show loading text if navigation takes longer than DELAY_SHOW_MS */
+    loadingTimer = setTimeout(() => {
+      if (token === session.navToken) {
+        loading.value = 'Loading chapter…';
+      }
+    }, DELAY_SHOW_MS);
+
+    /* Optional: update to a longer message if navigation is very slow */
+    longTimer = setTimeout(() => {
+      if (token === session.navToken && loading.value === 'Loading chapter…') {
+        loading.value = 'Still loading chapter…';
+      }
+    }, DELAY_LONG_MS);
 
     let asset;
     try {
@@ -221,8 +269,14 @@ export function createStore({ createEngine, library, hashFile }) {
       notify(`Failed to load ${path}: ${err.message}`);
       return;
     }
-    if (token !== session.navToken) return; /* superseded */
+    if (token !== session.navToken) { /* superseded */
+      clearTimeout(loadingTimer);
+      clearTimeout(longTimer);
+      return;
+    }
     if (!asset.found) {
+      clearTimeout(loadingTimer);
+      clearTimeout(longTimer);
       loading.value = null;
       notify(`Not found in archive: ${path}`);
       return;
@@ -231,10 +285,14 @@ export function createStore({ createEngine, library, hashFile }) {
       /* non-renderable target: images open standalone, the rest is
        * offered as a download-style tab only when the browser can show it */
       if (/^(image|text|application\/pdf)/.test(asset.mime || '')) {
+        clearTimeout(loadingTimer);
+        clearTimeout(longTimer);
         const url = URL.createObjectURL(new Blob([asset.buffer], { type: asset.mime }));
         window.open(url, '_blank', 'noopener');
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
       } else {
+        clearTimeout(loadingTimer);
+        clearTimeout(longTimer);
         notify(`Can't display ${path.split('/').pop()} (${asset.mime || 'binary'}).`);
       }
       loading.value = null;
@@ -242,6 +300,8 @@ export function createStore({ createEngine, library, hashFile }) {
     }
 
     await view.renderChapter(path, new Uint8Array(asset.buffer), { fragment, scrollTo });
+    clearTimeout(loadingTimer);
+    clearTimeout(longTimer);
     if (token !== session.navToken) return;
 
     batch(() => {

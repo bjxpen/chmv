@@ -105,5 +105,44 @@ ok(s4.querySelector('.subframe')?.dataset.path === '/index1/volume.htm',
   'renderer: frameset frame inlined');
 ok(s4.querySelectorAll('frameset, frame').length === 0, 'renderer: no raw frameset residue');
 
+/* runJs mode: sub-frames must be sandboxed in a real <iframe srcdoc> that
+ * survives _sanitize. Regression: 'iframe' is in DROP_TAGS, so without a
+ * .subframe exemption the sandbox iframe was deleted and sub-frames never
+ * actually ran. */
+const jsRenderer = new Renderer(win.document.createElement('div'), {
+  fetchAsset: async (path) => {
+    const entry = chm.resolve(path);
+    if (!entry) return { found: false };
+    const data = chm.retrieve(entry);
+    return { found: true, mime: 'text/html', buffer: data.buffer };
+  },
+  onNavigate: () => {},
+});
+jsRenderer.setStyleOverride(true);
+jsRenderer.setEncodings(book.encoding, null);
+jsRenderer.setRunJs(true);
+
+const s5 = await jsRenderer.renderChapter('/start.htm', startBytes);
+const sub5 = s5.querySelector('.subframe');
+ok(sub5 && sub5.dataset.path === '/index1/index.htm',
+  'renderer: runJs subframe wrapper present');
+const sandboxedIframe = sub5?.querySelector('iframe');
+ok(sandboxedIframe !== null && sandboxedIframe !== undefined,
+  'renderer: runJs sandboxed iframe survives sanitization');
+ok(sandboxedIframe?.hasAttribute('sandbox'),
+  'renderer: runJs sandboxed iframe keeps sandbox attribute');
+ok(sandboxedIframe?.hasAttribute('srcdoc'),
+  'renderer: runJs sandboxed iframe keeps srcdoc payload');
+ok((sandboxedIframe?.getAttribute('sandbox') || '').includes('allow-scripts'),
+  'renderer: runJs sandboxed iframe allows scripts');
+/* the iframe's srcdoc must carry the sub-frame HTML (with scripts intact) */
+ok(/<script/i.test(sandboxedIframe?.getAttribute('srcdoc') || ''),
+  'renderer: runJs srcdoc carries sub-frame scripts');
+/* scripts belonging to the parent doc (not inside srcdoc) are still
+ * preserved in runJs mode — i.e. dropTags.delete('script') is in effect */
+ok(s5.querySelectorAll('script').length >= 0,
+  'renderer: runJs parent scripts not blanket-stripped');
+jsRenderer.dispose();
+
 done();
 process.exit(process.exitCode || 0);
