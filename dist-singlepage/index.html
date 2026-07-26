@@ -1,0 +1,2230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="chmv — a private, offline CHM reader that runs entirely in your browser.">
+<title>chmv · CHM Reader</title>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#1c1917">
+  <script type="module" crossorigin>(function(){const n=document.createElement("link").relList;if(n&&n.supports&&n.supports("modulepreload"))return;for(const i of document.querySelectorAll('link[rel="modulepreload"]'))r(i);new MutationObserver(i=>{for(const s of i)if(s.type==="childList")for(const o of s.addedNodes)o.tagName==="LINK"&&o.rel==="modulepreload"&&r(o)}).observe(document,{childList:!0,subtree:!0});function t(i){const s={};return i.integrity&&(s.integrity=i.integrity),i.referrerPolicy&&(s.referrerPolicy=i.referrerPolicy),i.crossOrigin==="use-credentials"?s.credentials="include":i.crossOrigin==="anonymous"?s.credentials="omit":s.credentials="same-origin",s}function r(i){if(i.ep)return;i.ep=!0;const s=t(i);fetch(i.href,s)}})();var De,y,jn,Un,U,bn,Fn,Xn,Xe,Se,le,Vn,dn,Je,Qe,Ce={},Te=[],Ht=/acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i,He=Array.isArray;function D(e,n){for(var t in n)e[t]=n[t];return e}function fn(e){e&&e.parentNode&&e.parentNode.removeChild(e)}function Zn(e,n,t){var r,i,s,o={};for(s in n)s=="key"?r=n[s]:s=="ref"?i=n[s]:o[s]=n[s];if(arguments.length>2&&(o.children=arguments.length>3?De.call(arguments,2):t),typeof e=="function"&&e.defaultProps!=null)for(s in e.defaultProps)o[s]===void 0&&(o[s]=e.defaultProps[s]);return Le(e,o,r,i,null)}function Le(e,n,t,r,i){var s={type:e,props:n,key:t,ref:r,__k:null,__:null,__b:0,__e:null,__c:null,constructor:void 0,__v:i??++jn,__i:-1,__u:0};return i==null&&y.vnode!=null&&y.vnode(s),s}function pe(e){return e.children}function ce(e,n){this.props=e,this.context=n}function te(e,n){if(n==null)return e.__?te(e.__,e.__i+1):null;for(var t;n<e.__k.length;n++)if((t=e.__k[n])!=null&&t.__e!=null)return t.__e;return typeof e.type=="function"?te(e):null}function jt(e){if(e.__P&&e.__d){var n=e.__v,t=n.__e,r=[],i=[],s=D({},n);s.__v=n.__v+1,y.vnode&&y.vnode(s),hn(e.__P,s,n,e.__n,e.__P.namespaceURI,32&n.__u?[t]:null,r,t??te(n),!!(32&n.__u),i),s.__v=n.__v,s.__.__k[s.__i]=s,qn(r,s,i),n.__e=n.__=null,s.__e!=t&&Gn(s)}}function Gn(e){if((e=e.__)!=null&&e.__c!=null)return e.__e=e.__c.base=null,e.__k.some(function(n){if(n!=null&&n.__e!=null)return e.__e=e.__c.base=n.__e}),Gn(e)}function wn(e){(!e.__d&&(e.__d=!0)&&U.push(e)&&!$e.__r++||bn!=y.debounceRendering)&&((bn=y.debounceRendering)||Fn)($e)}function $e(){try{for(var e,n=1;U.length;)U.length>n&&U.sort(Xn),e=U.shift(),n=U.length,jt(e)}finally{U.length=$e.__r=0}}function Wn(e,n,t,r,i,s,o,a,u,l,d){var f,c,h,E,$,k,x,w=r&&r.__k||Te,m=n.length;for(u=Ut(t,n,w,u,m),f=0;f<m;f++)(h=t.__k[f])!=null&&(c=h.__i!=-1&&w[h.__i]||Ce,h.__i=f,k=hn(e,h,c,i,s,o,a,u,l,d),E=h.__e,h.ref&&c.ref!=h.ref&&(c.ref&&pn(c.ref,null,h),d.push(h.ref,h.__c||E,h)),$==null&&E!=null&&($=E),(x=!!(4&h.__u))||c.__k===h.__k?(u=Yn(h,u,e,x),x&&c.__e&&(c.__e=null)):typeof h.type=="function"&&k!==void 0?u=k:E&&(u=E.nextSibling),h.__u&=-7);return t.__e=$,u}function Ut(e,n,t,r,i){var s,o,a,u,l,d=t.length,f=d,c=0;for(e.__k=new Array(i),s=0;s<i;s++)(o=n[s])!=null&&typeof o!="boolean"&&typeof o!="function"?(typeof o=="string"||typeof o=="number"||typeof o=="bigint"||o.constructor==String?o=e.__k[s]=Le(null,o,null,null,null):He(o)?o=e.__k[s]=Le(pe,{children:o},null,null,null):o.constructor===void 0&&o.__b>0?o=e.__k[s]=Le(o.type,o.props,o.key,o.ref?o.ref:null,o.__v):e.__k[s]=o,u=s+c,o.__=e,o.__b=e.__b+1,a=null,(l=o.__i=Ft(o,t,u,f))!=-1&&(f--,(a=t[l])&&(a.__u|=2)),a==null||a.__v==null?(l==-1&&(i>d?c--:i<d&&c++),typeof o.type!="function"&&(o.__u|=4)):l!=u&&(l==u-1?c--:l==u+1?c++:(l>u?c--:c++,o.__u|=4))):e.__k[s]=null;if(f)for(s=0;s<d;s++)(a=t[s])!=null&&(2&a.__u)==0&&(a.__e==r&&(r=te(a)),Qn(a,a));return r}function Yn(e,n,t,r){var i,s;if(typeof e.type=="function"){for(i=e.__k,s=0;i&&s<i.length;s++)i[s]&&(i[s].__=e,n=Yn(i[s],n,t,r));return n}e.__e!=n&&(r&&(n&&e.type&&!n.parentNode&&(n=te(e)),t.insertBefore(e.__e,n||null)),n=e.__e);do n=n&&n.nextSibling;while(n!=null&&n.nodeType==8);return n}function Ft(e,n,t,r){var i,s,o,a=e.key,u=e.type,l=n[t],d=l!=null&&(2&l.__u)==0;if(l===null&&a==null||d&&a==l.key&&u==l.type)return t;if(r>(d?1:0)){for(i=t-1,s=t+1;i>=0||s<n.length;)if((l=n[o=i>=0?i--:s++])!=null&&(2&l.__u)==0&&a==l.key&&u==l.type)return o}return-1}function yn(e,n,t){n[0]=="-"?e.setProperty(n,t??""):e[n]=t==null?"":typeof t!="number"||Ht.test(n)?t:t+"px"}function ve(e,n,t,r,i){var s,o;e:if(n=="style")if(typeof t=="string")e.style.cssText=t;else{if(typeof r=="string"&&(e.style.cssText=r=""),r)for(n in r)t&&n in t||yn(e.style,n,"");if(t)for(n in t)r&&t[n]==r[n]||yn(e.style,n,t[n])}else if(n[0]=="o"&&n[1]=="n")s=n!=(n=n.replace(Vn,"$1")),o=n.toLowerCase(),n=o in e||n=="onFocusOut"||n=="onFocusIn"?o.slice(2):n.slice(2),e.l||(e.l={}),e.l[n+s]=t,t?r?t[le]=r[le]:(t[le]=dn,e.addEventListener(n,s?Qe:Je,s)):e.removeEventListener(n,s?Qe:Je,s);else{if(i=="http://www.w3.org/2000/svg")n=n.replace(/xlink(H|:h)/,"h").replace(/sName$/,"s");else if(n!="width"&&n!="height"&&n!="href"&&n!="list"&&n!="form"&&n!="tabIndex"&&n!="download"&&n!="rowSpan"&&n!="colSpan"&&n!="role"&&n!="popover"&&n in e)try{e[n]=t??"";break e}catch{}typeof t=="function"||(t==null||t===!1&&n[4]!="-"?e.removeAttribute(n):e.setAttribute(n,n=="popover"&&t==1?"":t))}}function En(e){return function(n){if(this.l){var t=this.l[n.type+e];if(n[Se]==null)n[Se]=dn++;else if(n[Se]<t[le])return;return t(y.event?y.event(n):n)}}}function hn(e,n,t,r,i,s,o,a,u,l){var d,f,c,h,E,$,k,x,w,m,N,z,X,P,Y,K,B=n.type;if(n.constructor!==void 0)return null;128&t.__u&&(u=!!(32&t.__u),s=[a=n.__e=t.__e]),(d=y.__b)&&d(n);e:if(typeof B=="function"){f=o.length;try{if(w=n.props,m=B.prototype&&B.prototype.render,N=(d=B.contextType)&&r[d.__c],z=d?N?N.props.value:d.__:r,t.__c?x=(c=n.__c=t.__c).__=c.__E:(m?n.__c=c=new B(w,z):(n.__c=c=new ce(w,z),c.constructor=B,c.render=Vt),N&&N.sub(c),c.state||(c.state={}),c.__n=r,h=c.__d=!0,c.__h=[],c._sb=[]),m&&c.__s==null&&(c.__s=c.state),m&&B.getDerivedStateFromProps!=null&&(c.__s==c.state&&(c.__s=D({},c.__s)),D(c.__s,B.getDerivedStateFromProps(w,c.__s))),E=c.props,$=c.state,c.__v=n,h)m&&B.getDerivedStateFromProps==null&&c.componentWillMount!=null&&c.componentWillMount(),m&&c.componentDidMount!=null&&c.__h.push(c.componentDidMount);else{if(m&&B.getDerivedStateFromProps==null&&w!==E&&c.componentWillReceiveProps!=null&&c.componentWillReceiveProps(w,z),n.__v==t.__v||!c.__e&&c.shouldComponentUpdate!=null&&c.shouldComponentUpdate(w,c.__s,z)===!1){n.__v!=t.__v&&(c.props=w,c.state=c.__s,c.__d=!1),n.__e=t.__e,n.__k=t.__k,n.__k.some(function(I){I&&(I.__=n)}),Te.push.apply(c.__h,c._sb),c._sb=[],c.__h.length&&o.push(c);break e}c.componentWillUpdate!=null&&c.componentWillUpdate(w,c.__s,z),m&&c.componentDidUpdate!=null&&c.__h.push(function(){c.componentDidUpdate(E,$,k)})}if(c.context=z,c.props=w,c.__P=e,c.__e=!1,X=y.__r,P=0,m)c.state=c.__s,c.__d=!1,X&&X(n),d=c.render(c.props,c.state,c.context),Te.push.apply(c.__h,c._sb),c._sb=[];else do c.__d=!1,X&&X(n),d=c.render(c.props,c.state,c.context),c.state=c.__s;while(c.__d&&++P<25);c.state=c.__s,c.getChildContext!=null&&(r=D(D({},r),c.getChildContext())),m&&!h&&c.getSnapshotBeforeUpdate!=null&&(k=c.getSnapshotBeforeUpdate(E,$)),Y=d!=null&&d.type===pe&&d.key==null?Jn(d.props.children):d,a=Wn(e,He(Y)?Y:[Y],n,t,r,i,s,o,a,u,l),c.base=n.__e,n.__u&=-161,c.__h.length&&o.push(c),x&&(c.__E=c.__=null)}catch(I){if(o.length=f,n.__v=null,u||s!=null){if(I.then){for(n.__u|=u?160:128;a&&a.nodeType==8&&a.nextSibling;)a=a.nextSibling;s!=null&&(s[s.indexOf(a)]=null),n.__e=a}else if(s!=null)for(K=s.length;K--;)fn(s[K])}else n.__e=t.__e;n.__k==null&&(n.__k=t.__k||[]),I.then||Kn(n),y.__e(I,n,t)}}else s==null&&n.__v==t.__v?(n.__k=t.__k,n.__e=t.__e):a=n.__e=Xt(t.__e,n,t,r,i,s,o,u,l);return(d=y.diffed)&&d(n),128&n.__u?void 0:a}function Kn(e){e&&(e.__c&&(e.__c.__e=!0),e.__k&&e.__k.some(Kn))}function qn(e,n,t){for(var r=0;r<t.length;r++)pn(t[r],t[++r],t[++r]);y.__c&&y.__c(n,e),e.some(function(i){try{e=i.__h,i.__h=[],e.some(function(s){s.call(i)})}catch(s){y.__e(s,i.__v)}})}function Jn(e){return typeof e!="object"||e==null||e.__b>0?e:He(e)?e.map(Jn):e.constructor!==void 0?null:D({},e)}function Xt(e,n,t,r,i,s,o,a,u){var l,d,f,c,h,E,$,k=t.props||Ce,x=n.props,w=n.type;if(w=="svg"?i="http://www.w3.org/2000/svg":w=="math"?i="http://www.w3.org/1998/Math/MathML":i||(i="http://www.w3.org/1999/xhtml"),s!=null){for(l=0;l<s.length;l++)if((h=s[l])&&"setAttribute"in h==!!w&&(w?h.localName==w:h.nodeType==3)){e=h,s[l]=null;break}}if(e==null){if(w==null)return document.createTextNode(x);e=document.createElementNS(i,w,x.is&&x),a&&(y.__m&&y.__m(n,s),a=!1),s=null}if(w==null)k===x||a&&e.data==x||(e.data=x);else{if(s=w=="textarea"&&x.defaultValue!=null?null:s&&De.call(e.childNodes),!a&&s!=null)for(k={},l=0;l<e.attributes.length;l++)k[(h=e.attributes[l]).name]=h.value;for(l in k)h=k[l],l=="dangerouslySetInnerHTML"?f=h:l=="children"||l in x||l=="value"&&"defaultValue"in x||l=="checked"&&"defaultChecked"in x||ve(e,l,null,h,i);for(l in x)h=x[l],l=="children"?c=h:l=="dangerouslySetInnerHTML"?d=h:l=="value"?E=h:l=="checked"?$=h:a&&typeof h!="function"||k[l]===h||ve(e,l,h,k[l],i);if(d)a||f&&(d.__html==f.__html||d.__html==e.innerHTML)||(e.innerHTML=d.__html),n.__k=[];else if(f&&(e.innerHTML=""),Wn(n.type=="template"?e.content:e,He(c)?c:[c],n,t,r,w=="foreignObject"?"http://www.w3.org/1999/xhtml":i,s,o,s?s[0]:t.__k&&te(t,0),a,u),s!=null)for(l=s.length;l--;)fn(s[l]);a&&w!="textarea"||(l="value",w=="progress"&&E==null?e.removeAttribute("value"):E!=null&&(E!==e[l]||w=="progress"&&!E||w=="option"&&E!=k[l])&&ve(e,l,E,k[l],i),l="checked",$!=null&&$!=e[l]&&ve(e,l,$,k[l],i))}return e}function pn(e,n,t){try{if(typeof e=="function"){var r=typeof e.__u=="function";r&&e.__u(),r&&n==null||(e.__u=e(n))}else e.current=n}catch(i){y.__e(i,t)}}function Qn(e,n,t){var r,i;if(y.unmount&&y.unmount(e),(r=e.ref)&&(r.current&&r.current!=e.__e||pn(r,null,n)),(r=e.__c)!=null){if(r.componentWillUnmount)try{r.componentWillUnmount()}catch(s){y.__e(s,n)}r.base=r.__P=r.__n=null}if(r=e.__k)for(i=0;i<r.length;i++)r[i]&&Qn(r[i],n,t||typeof e.type!="function");t||fn(e.__e),e.__c=e.__=e.__e=void 0}function Vt(e,n,t){return this.constructor(e,t)}function Zt(e,n,t){var r,i,s,o;n==document&&(n=document.documentElement),y.__&&y.__(e,n),i=(r=!1)?null:n.__k,s=[],o=[],hn(n,e=n.__k=Zn(pe,null,[e]),i||Ce,Ce,n.namespaceURI,i?null:n.firstChild?De.call(n.childNodes):null,s,i?i.__e:n.firstChild,r,o),qn(s,e,o),e.props.children=null}De=Te.slice,y={__e:function(e,n,t,r){for(var i,s,o;n=n.__;)if((i=n.__c)&&!i.__)try{if((s=i.constructor)&&s.getDerivedStateFromError!=null&&(i.setState(s.getDerivedStateFromError(e)),o=i.__d),i.componentDidCatch!=null&&(i.componentDidCatch(e,r||{}),o=i.__d),o)return i.__E=i}catch(a){e=a}throw e}},jn=0,Un=function(e){return e!=null&&e.constructor===void 0},ce.prototype.setState=function(e,n){var t;t=this.__s!=null&&this.__s!=this.state?this.__s:this.__s=D({},this.state),typeof e=="function"&&(e=e(D({},t),this.props)),e&&D(t,e),e!=null&&this.__v&&(n&&this._sb.push(n),wn(this))},ce.prototype.forceUpdate=function(e){this.__v&&(this.__e=!0,e&&this.__h.push(e),wn(this))},ce.prototype.render=pe,U=[],Fn=typeof Promise=="function"?Promise.prototype.then.bind(Promise.resolve()):setTimeout,Xn=function(e,n){return e.__v.__b-n.__v.__b},$e.__r=0,Xe=Math.random().toString(8),Se="__d"+Xe,le="__a"+Xe,Vn=/(PointerCapture)$|Capture$/i,dn=0,Je=En(!1),Qe=En(!0);var et=function(e,n,t,r){var i;n[0]=0;for(var s=1;s<n.length;s++){var o=n[s++],a=n[s]?(n[0]|=o?1:2,t[n[s++]]):n[++s];o===3?r[0]=a:o===4?r[1]=Object.assign(r[1]||{},a):o===5?(r[1]=r[1]||{})[n[++s]]=a:o===6?r[1][n[++s]]+=a+"":o?(i=e.apply(a,et(e,a,t,["",null])),r.push(i),a[0]?n[0]|=2:(n[s-2]=0,n[s]=i)):r.push(a)}return r},Sn=new Map;function Gt(e){var n=Sn.get(this);return n||(n=new Map,Sn.set(this,n)),(n=et(this,n.get(e)||(n.set(e,n=(function(t){for(var r,i,s=1,o="",a="",u=[0],l=function(c){s===1&&(c||(o=o.replace(/^\s*\n\s*|\s*\n\s*$/g,"")))?u.push(0,c,o):s===3&&(c||o)?(u.push(3,c,o),s=2):s===2&&o==="..."&&c?u.push(4,c,0):s===2&&o&&!c?u.push(5,0,!0,o):s>=5&&((o||!c&&s===5)&&(u.push(s,0,o,i),s=6),c&&(u.push(s,c,0,i),s=6)),o=""},d=0;d<t.length;d++){d&&(s===1&&l(),l(d));for(var f=0;f<t[d].length;f++)r=t[d][f],s===1?r==="<"?(l(),u=[u],s=3):o+=r:s===4?o==="--"&&r===">"?(s=1,o=""):o=r+o[0]:a?r===a?a="":o+=r:r==='"'||r==="'"?a=r:r===">"?(l(),s=1):s&&(r==="="?(s=5,i=o,o=""):r==="/"&&(s<5||t[d][f+1]===">")?(l(),s===3&&(u=u[0]),s=u,(u=u[0]).push(2,0,s),s=0):r===" "||r==="	"||r===`
+`||r==="\r"?(l(),s=2):o+=r),s===3&&o==="!--"&&(s=4,u=u[0])}return l(),u})(e)),n),arguments,[])).length>1?n:n[0]}const _=Gt.bind(Zn);var he,C,Ve,Ln,Ae=0,nt=[],T=y,kn=T.__b,xn=T.__r,Cn=T.diffed,Tn=T.__c,$n=T.unmount,An=T.__;function mn(e,n){T.__h&&T.__h(C,e,Ae||n),Ae=0;var t=C.__H||(C.__H={__:[],__h:[]});return e>=t.__.length&&t.__.push({}),t.__[e]}function F(e){return Ae=1,Wt(rt,e)}function Wt(e,n,t){var r=mn(he++,2);if(r.t=e,!r.__c&&(r.__=[rt(void 0,n),function(a){var u=r.__N?r.__N[0]:r.__[0],l=r.t(u,a);u!==l&&(r.__N=[l,r.__[1]],r.__c.setState({}))}],r.__c=C,!C.__f)){var i=function(a,u,l){if(!r.__c.__H)return!0;var d=!1,f=r.__c.props!==a;if(r.__c.__H.__.some(function(h){if(h.__N){d=!0;var E=h.__[0];h.__=h.__N,h.__N=void 0,E!==h.__[0]&&(f=!0)}}),s){var c=s.call(this,a,u,l);return d?c||f:c}return!d||f};C.__f=!0;var s=C.shouldComponentUpdate,o=C.componentWillUpdate;C.componentWillUpdate=function(a,u,l){if(this.__e){var d=s;s=void 0,i(a,u,l),s=d}o&&o.call(this,a,u,l)},C.shouldComponentUpdate=i}return r.__N||r.__}function O(e,n){var t=mn(he++,3);!T.__s&&tt(t.__H,n)&&(t.__=e,t.u=n,C.__H.__h.push(t))}function ue(e){return Ae=5,me(function(){return{current:e}},[])}function me(e,n){var t=mn(he++,7);return tt(t.__H,n)&&(t.__=e(),t.__H=n,t.__h=e),t.__}function Yt(){for(var e;e=nt.shift();){var n=e.__H;if(e.__P&&n)try{n.__h.some(ke),n.__h.some(en),n.__h=[]}catch(t){n.__h=[],T.__e(t,e.__v)}}}T.__b=function(e){C=null,kn&&kn(e)},T.__=function(e,n){e&&n.__k&&n.__k.__m&&(e.__m=n.__k.__m),An&&An(e,n)},T.__r=function(e){xn&&xn(e),he=0;var n=(C=e.__c).__H;n&&(Ve===C?(n.__h=[],C.__h=[],n.__.some(function(t){t.__N&&(t.__=t.__N),t.u=t.__N=void 0})):(n.__h.some(ke),n.__h.some(en),n.__h=[],he=0)),Ve=C},T.diffed=function(e){Cn&&Cn(e);var n=e.__c;n&&n.__H&&(n.__H.__h.length&&(nt.push(n)!==1&&Ln===T.requestAnimationFrame||((Ln=T.requestAnimationFrame)||Kt)(Yt)),n.__H.__.some(function(t){t.u&&(t.__H=t.u,t.u=void 0)})),Ve=C=null},T.__c=function(e,n){n.some(function(t){try{t.__h.some(ke),t.__h=t.__h.filter(function(r){return!r.__||en(r)})}catch(r){n.some(function(i){i.__h&&(i.__h=[])}),n=[],T.__e(r,t.__v)}}),Tn&&Tn(e,n)},T.unmount=function(e){$n&&$n(e);var n,t=e.__c;t&&t.__H&&(t.__H.__.some(function(r){try{ke(r)}catch(i){n=i}}),t.__H=void 0,n&&T.__e(n,t.__v))};var Mn=typeof requestAnimationFrame=="function";function Kt(e){var n,t=function(){clearTimeout(r),Mn&&cancelAnimationFrame(n),setTimeout(e)},r=setTimeout(t,35);Mn&&(n=requestAnimationFrame(t))}function ke(e){var n=C,t=e.__c;typeof t=="function"&&(e.__c=void 0,t()),C=n}function en(e){var n=C;e.__c=e.__(),C=n}function tt(e,n){return!e||e.length!==n.length||n.some(function(t,r){return t!==e[r]})}function rt(e,n){return typeof n=="function"?n(e):n}const re=(e,n=20)=>()=>_`
+  <svg viewBox="0 0 24 24" width=${n} height=${n} aria-hidden="true">
+    <path fill="currentColor" d=${e} />
+  </svg>`,qt=re("M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6a1 1 0 0 0-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z"),Jt=re("M3 5h18v2H3V5zm0 6h12v2H3v-2zm0 6h18v2H3v-2z"),Qt=re("M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"),er=re("M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"),nr=re("M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-.97l2.11-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.3 7.3 0 0 0-1.69-.98l-.38-2.65A.49.49 0 0 0 14 2h-4a.49.49 0 0 0-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.5.5 0 0 0 .12.64L4.57 11c-.04.32-.07.65-.07.98s.03.66.07.97l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46c.14.24.42.34.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.05.24.25.42.49.42h4c.24 0 .44-.18.49-.42l.38-2.65a7.3 7.3 0 0 0 1.69-.98l2.49 1c.23.09.5 0 .61-.22l2-3.46a.5.5 0 0 0-.12-.64l-2.11-1.65z"),tr=re("M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-5h2v5h10v-5h2zM11 4.83 8.41 7.41 7 6l5-5 5 5-1.41 1.41L13 4.83V15h-2V4.83z",42),rr=(e=0)=>e>=1<<30?`${(e/(1<<30)).toFixed(1)} GB`:e>=1<<20?`${(e/(1<<20)).toFixed(1)} MB`:e>=1024?`${(e/1024).toFixed(0)} KB`:`${e} B`,sr=e=>{if(!e)return"";const n=new Date(e),t=Math.floor((Date.now()-n)/864e5);return t===0?n.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):t===1?"yesterday":t<7?`${t} days ago`:n.toLocaleDateString()};async function be(e){if(window.showOpenFilePicker)try{const[t]=await window.showOpenFilePicker({types:[{description:"Compiled HTML Help",accept:{"application/vnd.ms-htmlhelp":[".chm"]}}]});e(await t.getFile(),t);return}catch(t){if(t?.name==="AbortError")return}const n=document.createElement("input");n.type="file",n.accept=".chm,application/vnd.ms-htmlhelp,application/octet-stream",n.onchange=()=>n.files[0]&&e(n.files[0],null),n.click()}const ir=({row:e,onOpen:n,onRemove:t})=>{const r=Math.round((e.progress||0)*100);return _`
+    <div class="shelf-card" role="button" tabindex="0"
+         onClick=${()=>n(e)}
+         onKeyDown=${i=>i.key==="Enter"&&n(e)}>
+      <h3>${e.title||e.fileName}</h3>
+      <div class="progress-track"><div class="progress-fill" style="width:${r}%" /></div>
+      <div class="shelf-meta">
+        <span>${r}% · ${rr(e.fileSize)}</span>
+        <span>${sr(e.lastOpened)}</span>
+      </div>
+      <button class="shelf-remove" title="Remove from history"
+              aria-label="Remove ${e.title||e.fileName} from history"
+              onClick=${i=>{i.stopPropagation(),t(e.hash)}}>×</button>
+    </div>`},or=({store:e})=>{const[n,t]=F(!1),r=e.shelf.value,i=(s,o)=>e.openFile(s,o);return O(()=>{let s=0;const o=d=>{d.preventDefault(),s++,t(!0)},a=()=>{--s<=0&&(s=0,t(!1))},u=d=>d.preventDefault(),l=async d=>{d.preventDefault(),s=0,t(!1);const f=d.dataTransfer?.items?.[0];let c=null;if(f?.getAsFileSystemHandle){try{c=await f.getAsFileSystemHandle()}catch{}c?.kind!=="file"&&(c=null)}const h=d.dataTransfer?.files?.[0];h&&i(h,c)};return window.addEventListener("dragenter",o),window.addEventListener("dragleave",a),window.addEventListener("dragover",u),window.addEventListener("drop",l),()=>{window.removeEventListener("dragenter",o),window.removeEventListener("dragleave",a),window.removeEventListener("dragover",u),window.removeEventListener("drop",l)}},[]),O(()=>{e.refreshShelf()},[]),_`
+    <main id="home" class="screen">
+      <div class="home-inner">
+        <header class="home-header">
+          <div class="home-brand">
+            <img src="icons/icon.svg" alt="" width="44" height="44" />
+            <div>
+              <h1>chmv</h1>
+              <p>CHM reader · 100% local, nothing leaves your device</p>
+            </div>
+          </div>
+        </header>
+
+        <div class="dropzone ${n?"dragover":""}" tabindex="0" role="button"
+             aria-label="Open a CHM file by dropping it here or pressing Enter"
+             onClick=${()=>be(i)}
+             onKeyDown=${s=>(s.key==="Enter"||s.key===" ")&&(s.preventDefault(),be(i))}>
+          <${tr} />
+          <p class="dz-title">Drop a <strong>.chm</strong> file here</p>
+          <p class="dz-sub">or</p>
+          <button class="btn primary" type="button"
+                  onClick=${s=>{s.stopPropagation(),be(i)}}>
+            Choose file…
+          </button>
+        </div>
+
+        <section class="shelf" aria-labelledby="shelf-title">
+          <div class="shelf-head"><h2 id="shelf-title">Recent files</h2></div>
+          ${r.length?_`<div class="shelf-list">
+                ${r.map(s=>_`
+                  <${ir} key=${s.hash} row=${s}
+                    onOpen=${o=>e.reopenFromShelf(o,()=>be(i))}
+                    onRemove=${o=>e.removeFromShelf(o)} />`)}
+              </div>`:_`<p class="shelf-empty">Nothing here yet — open a CHM file to start reading.</p>`}
+        </section>
+
+        <footer class="home-foot">
+          <p>Legacy CJK novels and modern documentation both welcome.
+             Encodings: GBK · GB18030 · Big5 · Shift-JIS · UTF-8.
+             Works fully offline once installed.</p>
+        </footer>
+      </div>
+    </main>`};function q(e,n){if(n==null)return null;let t=String(n).replace(/\\/g,"/").trim();const r=t.match(/^(?:ms-its:|mk:@msitstore:)?.*?\.chm::(.*)$/i);r&&(t=r[1]);const i=t.indexOf("#");i>=0&&(t=t.slice(0,i));const s=t.indexOf("?");if(s>=0&&(t=t.slice(0,s)),!t)return null;try{t=decodeURIComponent(t)}catch{}t.startsWith("/")||(t=(e?e.slice(0,e.lastIndexOf("/")+1):"/")+t);const o=[];for(const a of t.split("/"))a===""||a==="."||(a===".."?o.pop():o.push(a));return"/"+o.join("/")}function ar(e){if(e==null)return"";const n=String(e),t=n.indexOf("#");return t>=0?n.slice(t+1):""}function lr(e){return/\.(x?html?|xht)$/i.test(e)}function st(e){return/\.txt$/i.test(e)}function cr(e){return lr(e)||st(e)}function J(e){return/^(https?|mailto|ftp|tel|data|javascript|about):/i.test(String(e).trim())}const ur=[{value:"",label:"Auto detect"},{value:"utf-8",label:"UTF-8"},{value:"gbk",label:"GBK (简体)"},{value:"gb18030",label:"GB18030 (简体)"},{value:"big5",label:"Big5 (繁體)"},{value:"shift_jis",label:"Shift-JIS (日本語)"},{value:"euc-jp",label:"EUC-JP (日本語)"},{value:"euc-kr",label:"EUC-KR (한국어)"},{value:"windows-1252",label:"Windows-1252"},{value:"windows-1251",label:"Windows-1251 (кириллица)"}],dr={gb2312:"gbk",gb_2312:"gbk","gb-2312":"gbk",csgb2312:"gbk","x-gbk":"gbk",gb18030:"gb18030",gbk:"gbk","hz-gb-2312":"gbk",big5:"big5","big-5":"big5","big5-hkscs":"big5","cn-big5":"big5",csbig5:"big5","x-x-big5":"big5",shift_jis:"shift_jis","shift-jis":"shift_jis",sjis:"shift_jis","x-sjis":"shift_jis",ms_kanji:"shift_jis","windows-31j":"shift_jis",cp932:"shift_jis","euc-jp":"euc-jp","x-euc-jp":"euc-jp","euc-kr":"euc-kr","ks_c_5601-1987":"euc-kr",ksc5601:"euc-kr",cp949:"euc-kr","utf-8":"utf-8",utf8:"utf-8",unicode:"utf-8","iso-8859-1":"windows-1252",latin1:"windows-1252","latin-1":"windows-1252","windows-1252":"windows-1252",cp1252:"windows-1252","us-ascii":"windows-1252",ascii:"windows-1252","windows-1251":"windows-1251",cp1251:"windows-1251","koi8-r":"koi8-r","windows-1250":"windows-1250","windows-1253":"windows-1253","windows-1254":"windows-1254","windows-1255":"windows-1255","windows-1256":"windows-1256","windows-874":"windows-874","tis-620":"windows-874"};function fr(e){return e&&dr[e.toLowerCase()]||null}function hr(e){const n=e.subarray(0,2048);let t="";for(let i=0;i<n.length;i++)t+=String.fromCharCode(n[i]);const r=t.match(/charset\s*=\s*["']?\s*([\w][\w.:-]*)/i);return r?r[1].toLowerCase():null}function pr(e){const n=Math.min(e.length,65536);let t=0,r=!1;for(;t<n;){const i=e[t];if(i<128){t++;continue}let s;if((i&224)===192)s=2;else if((i&240)===224)s=3;else if((i&248)===240)s=4;else return!1;if(t+s>n)break;for(let o=1;o<s;o++)if((e[t+o]&192)!==128)return!1;r=!0,t+=s}return r?"multibyte":"ascii"}function mr(e){return e.length>=3&&e[0]===239&&e[1]===187&&e[2]===191}function _r(e){const n=fr(hr(e));return n?{encoding:n,source:"meta"}:mr(e)?{encoding:"utf-8",source:"bom"}:pr(e)==="multibyte"?{encoding:"utf-8",source:"heuristic"}:null}function gr(e,n,t){return n||_r(e)?.encoding||t||"utf-8"}function Ze(e,n){try{return new TextDecoder(n).decode(e)}catch{return new TextDecoder("utf-8").decode(e)}}const vr=e=>e.replace(/\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[^ux])/g,(n,t)=>t[0]==="u"||t[0]==="x"?String.fromCharCode(parseInt(t.slice(1),16)):{n:`
+`,r:"\r",t:"	",b:"\b",f:"\f",v:"\v",0:"\0"}[t]??t);function br(e,n){const t=e[n],r=t==="["?"]":")",i=[];let s=n+1,o=1;for(;s<e.length&&o>0;){const a=e[s];if(a==='"'||a==="'"){let u=s+1,l="";for(;u<e.length&&e[u]!==a;)e[u]==="\\"&&u+1<e.length?(l+=e[u]+e[u+1],u+=2):l+=e[u++];i.push(vr(l)),s=u+1}else a===t?(o++,s++):(a===r&&o--,s++)}return{literals:i,end:s}}const wr=e=>/document\s*\.\s*write(ln)?\s*\(/.test(e.slice(0,4096));function yr(e){const n=/document\s*\.\s*write(?:ln)?\s*\(/g;let t="",r;for(;(r=n.exec(e))!==null;){const{literals:i,end:s}=br(e,r.index+r[0].length-1);t+=i.join(""),n.lastIndex<s&&(n.lastIndex=s)}return t}const Er=e=>e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");function Sr(e){return e.split(/\r?\n/).map(n=>n.trim()?`<p>${Er(n)}</p>`:"").join(`
+`)}const Lr=`
+  /* Neutralize hardcoded legacy styling so themes apply uniformly. */
+  .chapters section.doc, .chapters section.doc * {
+    background: transparent !important;
+    color: inherit !important;
+    font-family: inherit !important;
+    line-height: inherit !important;
+    letter-spacing: inherit !important;
+  }
+  .chapters section.doc font { font-size: inherit !important; }
+  .chapters section.doc table { border-color: color-mix(in srgb, currentColor 25%, transparent) !important; }
+`,kr=e=>`
+  :host { display: block; }
+  .chapters {
+    color: var(--reader-fg, #333);
+    font-family: var(--reader-font, sans-serif);
+    font-size: var(--reader-font-size, 18px);
+    line-height: var(--reader-line-height, 1.8);
+    letter-spacing: var(--reader-letter-spacing, 0.02em);
+    overflow-wrap: break-word;
+    word-break: normal;
+    line-break: loose;
+    text-align: justify;
+    text-justify: inter-ideograph;
+  }
+  section.doc { padding: 0 0 1em; }
+  section.doc:focus { outline: none; }
+  section.doc p, section.doc div {
+    margin-block-start: var(--reader-para-spacing, 0.9em);
+    margin-block-end: var(--reader-para-spacing, 0.9em);
+  }
+  section.doc h1, section.doc h2, section.doc h3, section.doc h4 {
+    line-height: 1.4;
+    margin: 1.2em 0 0.6em;
+  }
+  section.doc img { max-width: 100%; height: auto; }
+  section.doc table { max-width: 100%; border-collapse: collapse; }
+  section.doc td, section.doc th { padding: 2px 8px; }
+  section.doc pre, section.doc code, section.doc tt {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    line-break: auto;
+  }
+  section.doc pre {
+    overflow-x: auto;
+    background: color-mix(in srgb, currentColor 7%, transparent);
+    padding: 0.7em 1em;
+    border-radius: 6px;
+  }
+  section.doc a { color: var(--reader-link, #2467c6); }
+  section.doc hr { border: none; border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent); }
+  .chapter-divider {
+    display: flex; align-items: center; gap: 1em;
+    margin: 2.2em 0; color: var(--reader-fg-muted, #999);
+    font-size: 0.8em; user-select: none;
+  }
+  .chapter-divider::before, .chapter-divider::after {
+    content: ''; flex: 1;
+    border-top: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  }
+  ${e?Lr:""}
+`,xr=new Set(["script","object","embed","applet","iframe","frame","frameset","base","form","input","button","select","textarea","link","meta","noscript","template","xml","audio","video","source","track"]),Cr=["bgcolor","text","link","vlink","alink","background","color","face","size","align","valign","border","cellpadding","cellspacing","width","height","hspace","vspace"];class Tr{constructor(n,t){this.host=n,this.hooks=t,this.shadow=n.attachShadow({mode:"open"}),this.baseStyle=document.createElement("style"),this.shadow.appendChild(this.baseStyle),this.container=document.createElement("div"),this.container.className="chapters",this.shadow.appendChild(this.container),this.sectionBlobs=new Map,this.assetCache=new Map,this.idlePool=[],this.idlePoolBudget=12*1024*1024,this.assetPending=new Map,this.overrideStyles=!0,this.bookEncoding="utf-8",this.encodingOverride=null,this.shadow.addEventListener("click",r=>this._onClick(r)),this._applyBaseStyle()}setStyleOverride(n){this.overrideStyles=!!n,this._applyBaseStyle()}setEncodings(n,t){this.bookEncoding=n||"utf-8",this.encodingOverride=t||null}_applyBaseStyle(){this.baseStyle.textContent=kr(this.overrideStyles)}async renderChapter(n,t){return this.clear(),this.appendChapter(n,t)}async appendChapter(n,t,{divider:r=!1,title:i=""}={}){const s=await this._buildSection(n,t);if(r&&this.container.children.length>0){const o=document.createElement("div");o.className="chapter-divider",o.textContent=i||n.split("/").pop(),this.container.appendChild(o),s._divider=o}return this.container.appendChild(s),s}removeSection(n){const t=this.sectionBlobs.get(n);if(t){for(const r of t)this._releaseAsset(r);this.sectionBlobs.delete(n)}n._divider&&n._divider.remove(),n.remove()}clear(){for(const n of[...this.sectionBlobs.keys()])this.removeSection(n);this.container.textContent=""}dispose(){this.clear();for(const[n,t]of this.assetCache)URL.revokeObjectURL(t.url),this.assetCache.delete(n);this.idlePool.length=0,this.assetPending.clear()}async _buildSection(n,t){const r=t instanceof Uint8Array?t:new Uint8Array(t),i=document.createElement("section");i.className="doc",i.dataset.path=n;const s=new Set;this.sectionBlobs.set(i,s);const{fragment:o,styleTexts:a}=await this._buildContent(n,r,s,0);if(i.appendChild(o),!this.overrideStyles&&a.length){const u=document.createElement("style");let l="";for(const d of a){let f=d.css;if(d.path){const c=await this._fetchRaw(d.path);if(!c)continue;f=Ze(new Uint8Array(c.buffer),"utf-8")}l+=await this._rewriteCss(f,d.base,s,0),l+=`
+`}u.textContent=l,i.insertBefore(u,i.firstChild)}return i}async _buildContent(n,t,r,i){const s=gr(t,this.encodingOverride,this.bookEncoding);let o=Ze(t,s);st(n)&&(o=wr(o)?yr(o):Sr(o));const a=new DOMParser().parseFromString(o,"text/html"),u=[];await this._inlineFrames(a,n,r,i,u);for(const f of[...a.querySelectorAll("frameset")].reverse()){const c=a.createElement("div");for(;f.firstChild;)c.appendChild(f.firstChild);f.replaceWith(c)}if(!a.body){const f=a.createElement("body");for(const c of[...a.documentElement.children])c.tagName!=="HEAD"&&c!==f&&f.appendChild(c);a.documentElement.appendChild(f)}if(!this.overrideStyles){for(const f of a.querySelectorAll("style"))u.push({css:f.textContent||"",base:n});for(const f of a.querySelectorAll('link[rel~="stylesheet" i][href]')){const c=q(n,f.getAttribute("href"));c&&u.push({path:c,base:c})}}this._sanitize(a);const l=a.body||a.documentElement,d=document.createDocumentFragment();for(;l.firstChild;)d.appendChild(l.firstChild);return await this._resolveAssets(d,n,r),{fragment:d,styleTexts:u}}async _inlineFrames(n,t,r,i,s){if(i>=2)return;const o=[...n.querySelectorAll("iframe[src], frame[src]")];for(const a of o){const u=a.getAttribute("src");if(!u||J(u))continue;const l=q(t,u);if(!l||!cr(l))continue;const d=await this._fetchRaw(l);if(d)try{const{fragment:f,styleTexts:c}=await this._buildContent(l,new Uint8Array(d.buffer),r,i+1);s.push(...c);const h=n.createElement("div");h.className="subframe",h.dataset.path=l,h.appendChild(f),a.replaceWith(h)}catch{}}}_sanitize(n){for(const s of n.querySelectorAll("iframe[src], frame[src]")){const o=s.getAttribute("src");if(o&&!J(o)){const a=n.createElement("p"),u=n.createElement("a");u.setAttribute("href",o),u.textContent=`→ ${o}`,a.appendChild(u),s.replaceWith(a)}}const t=[...xr].join(",");for(const s of n.querySelectorAll(t))s.remove();const r=n.createTreeWalker(n.documentElement,NodeFilter.SHOW_ELEMENT),i=[];for(;r.nextNode();)i.push(r.currentNode);for(const s of i){for(const o of[...s.attributes]){const a=o.name.toLowerCase();(a.startsWith("on")||(a==="href"||a==="src"||a==="action")&&/^\s*(javascript|vbscript|data:text\/html)/i.test(o.value))&&s.removeAttribute(o.name)}if(this.overrideStyles){s.removeAttribute("style");for(const o of Cr)(o==="width"||o==="height")&&s.tagName==="IMG"||s.removeAttribute(o)}}}async _resolveAssets(n,t,r){const i=[],s=o=>o.closest&&o.closest(".subframe")!==null;for(const o of n.querySelectorAll('img[src], input[type="image"][src]')){const a=o.getAttribute("src");if(!a||a.startsWith("blob:")||J(a)||s(o))continue;const u=q(t,a);u&&(o.removeAttribute("src"),o.setAttribute("loading","lazy"),i.push(this._acquireAsset(u,r).then(l=>{l?o.setAttribute("src",l):o.setAttribute("alt",o.getAttribute("alt")||`[missing: ${a}]`)})))}if(!this.overrideStyles)for(const o of n.querySelectorAll('[style*="url(" i]')){const a=o.getAttribute("style")||"";i.push(this._rewriteCss(a,t,r,2).then(u=>{o.setAttribute("style",u)}))}for(const o of n.querySelectorAll("a[href]")){if(o.dataset.internalHref)continue;const a=o.getAttribute("href");if(a){if(J(a)){o.setAttribute("target","_blank"),o.setAttribute("rel","noopener noreferrer");continue}o.dataset.internalHref=a,o.dataset.internalBase=t,o.removeAttribute("target")}}await Promise.all(i)}async _rewriteCss(n,t,r,i){if(i>3)return n;const s=/@import\s+(?:url\(\s*)?["']?([^"')\s]+)["']?\s*\)?\s*;/gi,o=[...n.matchAll(s)];for(const d of o){let f="";if(!J(d[1])){const c=q(t,d[1]),h=c?await this._fetchRaw(c):null;if(h){const E=Ze(new Uint8Array(h.buffer),"utf-8");f=await this._rewriteCss(E,c,r,i+1)}}n=n.replace(d[0],f)}const a=/url\(\s*(["']?)([^"')]+)\1\s*\)/gi,u=[...n.matchAll(a)],l=new Map;for(const d of u){const f=d[2].trim();if(J(f)||f.startsWith("blob:")||l.has(f))continue;const c=q(t,f);if(!c)continue;const h=await this._acquireAsset(c,r);h&&l.set(f,h)}return l.size&&(n=n.replace(a,(d,f,c)=>{const h=l.get(c.trim());return h?`url("${h}")`:d})),n}async _fetchRaw(n){try{const t=await this.hooks.fetchAsset(n);return t&&t.found?t:null}catch{return null}}async _acquireAsset(n,t){const r=n.toLowerCase(),i=u=>(t&&!t.has(r)&&(t.add(r),u.refs===0&&this._unpoolIdle(r),u.refs++),u.url),s=this.assetCache.get(r);if(s)return i(s);let o=this.assetPending.get(r);o||(o=this._fetchRaw(n).then(u=>{if(this.assetPending.delete(r),!u)return null;const d={url:URL.createObjectURL(new Blob([u.buffer],{type:u.mime})),refs:0,size:u.buffer.byteLength||0};return this.assetCache.set(r,d),d}),this.assetPending.set(r,o));const a=await o;return a?i(a):null}_releaseAsset(n){const t=this.assetCache.get(n);t&&--t.refs<=0&&(t.refs=0,this.idlePool.push(n),this._trimIdlePool())}_unpoolIdle(n){const t=this.idlePool.indexOf(n);t>=0&&this.idlePool.splice(t,1)}_trimIdlePool(){let n=0;for(const t of this.idlePool)n+=this.assetCache.get(t)?.size||0;for(;this.idlePool.length&&n>this.idlePoolBudget;){const t=this.idlePool.shift(),r=this.assetCache.get(t);r&&r.refs===0&&(URL.revokeObjectURL(r.url),this.assetCache.delete(t),n-=r.size||0)}}_onClick(n){const t=n.target.closest?n.target.closest("a[data-internal-href]"):null;if(!t)return;n.preventDefault(),n.stopPropagation();const r=t.dataset.internalHref,i=t.dataset.internalBase||"/",s=ar(r),o=q(i,r);if(!o||o==="/"){s&&this.scrollToFragment(t.closest("section.doc"),s);return}this.hooks.onNavigate(o,s)}scrollToFragment(n,t){if(!n||!t)return!1;const r=n.querySelector(`[id="${CSS.escape(t)}"]`)||n.querySelector(`a[name="${CSS.escape(t)}"]`);return r?(r.scrollIntoView({block:"start"}),!0):!1}}const $r=6;function Ar(e,n,t){const r=ue({renderer:null,sections:[],loadingNext:!1});O(()=>{const o=new Tr(n.current,{fetchAsset:a=>e.fetchAsset(a),onNavigate:(a,u)=>e.navigateTo(a,{fragment:u})});return o.setStyleOverride(e.settings.value.overrideStyles),r.current.renderer=o,e.connectView({reset:()=>{o.dispose(),r.current.sections=[]},renderChapter:async(a,u,{fragment:l="",scrollTo:d=0}={})=>{const f=e.book.value;o.setEncodings(f?.encoding,e.encodingOverride.value||null);const c=await o.renderChapter(a,u);r.current.sections=[{path:a,el:c}];const h=t.current;return l&&o.scrollToFragment(c,l)||(d&&typeof d=="object"?h.scrollTop=(d.ratio||0)*h.scrollHeight:h.scrollTop=d||0),h.focus({preventScroll:!0}),c},getScrollState:()=>{const a=t.current;if(!a)return{scroll:0,ratio:0};const u=a.scrollHeight-a.clientHeight;let l=a.scrollTop;const d=r.current.sections.find(f=>f.path===e.currentPath.value);return d&&r.current.sections.length>1&&(l=Math.max(0,a.getBoundingClientRect().top-d.el.getBoundingClientRect().top)),{scroll:l,ratio:u>0?a.scrollTop/u:1}}}),()=>o.dispose()},[]);const i=e.settings.value.overrideStyles;return O(()=>{const o=r.current.renderer;if(!(!o||o.overrideStyles===i)&&(o.setStyleOverride(i),e.currentPath.value)){const a=t.current?.scrollTop??0;e.navigateTo(e.currentPath.value,{scrollTo:a})}},[i]),{onScroll:async()=>{if(e.scheduleSave(),e.settings.value.scrollMode!=="infinite")return;const{sections:o}=r.current,a=t.current;if(!a||!o.length)return;const u=a.getBoundingClientRect().top+8,l=o.reduce((d,f)=>f.el.getBoundingClientRect().top<=u?f.path:d,o[0].path);if(e.setVisiblePath(l),!r.current.loadingNext&&!(a.scrollTop+a.clientHeight<a.scrollHeight-1200)){r.current.loadingNext=!0;try{const d=await e.fetchSibling(o[o.length-1].path,1);if(d){const f=await r.current.renderer.appendChapter(d.path,d.bytes,{divider:!0,title:d.label});for(o.push({path:d.path,el:f});o.length>$r;){const c=o.shift(),h=c.el.getBoundingClientRect().height+(c.el._divider?.getBoundingClientRect().height??0);r.current.renderer.removeSection(c.el),a.scrollTop-=h}}}catch(d){console.warn("continuous scroll load failed",d)}finally{r.current.loadingNext=!1}}}}}const Mr=(e,n)=>{const t=new Set,r=new Set,i=s=>{const o=s.children.reduce((u,l)=>i(l)||u,!1),a=n&&s.name.toLowerCase().includes(n);return a&&r.add(s.id),(a||o)&&t.add(s.id),a||o};return e.forEach(i),{visible:t,hits:r}},it=(e,n,t=[])=>{if(!n)return null;for(const r of e){if(r.local&&r.local.toLowerCase()===n.toLowerCase())return[...t,r.id];const i=it(r.children,n,[...t,r.id]);if(i)return i}return null},Ge=400,ot=({nodes:e,depth:n,ctx:t})=>{const[r,i]=F(Ge),s=t.activeLocal?e.findIndex(u=>u.local&&u.local.toLowerCase()===t.activeLocal.toLowerCase()):-1,o=t.filter.needle?e.length:Math.max(r,s>=0?s+Ge/2:0),a=e.length>o?e.slice(0,o):e;return _`
+    ${a.map(u=>_`<${Pr} key=${u.id} node=${u} depth=${n} ctx=${t} />`)}
+    ${a.length<e.length&&_`
+      <div class="tree-more">
+        <button class="btn" onClick=${()=>i(o+Ge*2)}>
+          Show more (${e.length-a.length} left)
+        </button>
+      </div>`}`},Pr=({node:e,depth:n,ctx:t})=>{const{expanded:r,toggle:i,onSelect:s,activeLocal:o,filter:a}=t;if(a.needle&&!a.visible.has(e.id))return null;const u=e.children.length>0,l=r.has(e.id)||a.needle&&a.visible.has(e.id),d=e.local&&o&&e.local.toLowerCase()===o.toLowerCase(),f=a.hits.has(e.id);return _`
+    <div class="tree-item">
+      <div class="tree-row ${d?"active":""} ${f?"filter-hit":""}"
+           style="padding-inline-start:${n*14}px"
+           ref=${d?t.activeRef:null}>
+        <span class="tree-caret ${u?"":"leaf"}"
+              onClick=${()=>u&&i(e.id)}>
+          ${u?l?"▾":"▸":""}
+        </span>
+        <span class="tree-label ${e.local?"navigable":""}" tabindex="0" title=${e.name}
+              onClick=${()=>e.local?s(e.local):i(e.id)}
+              onKeyDown=${c=>c.key==="Enter"&&(e.local?s(e.local):i(e.id))}>
+          ${e.name}
+        </span>
+      </div>
+      ${u&&l&&_`
+        <div class="tree-children">
+          <${ot} nodes=${e.children} depth=${n+1} ctx=${t} />
+        </div>`}
+    </div>`},Rr=({tree:e,activeLocal:n,filterText:t,onSelect:r})=>{const[i,s]=F(()=>new Set(e.map(f=>f.id))),o=ue(null);O(()=>{s(new Set(e.map(f=>f.id)))},[e]),O(()=>{const f=it(e,n);f&&(s(c=>new Set([...c,...f])),requestAnimationFrame(()=>o.current?.scrollIntoView({block:"nearest"})))},[n,e]);const a=t.trim().toLowerCase(),u=me(()=>a?{needle:a,...Mr(e,a)}:{needle:"",visible:new Set,hits:new Set},[e,a]),l=f=>s(c=>{const h=new Set(c);return h.has(f)?h.delete(f):h.add(f),h});return e.length?_`<${ot} nodes=${e} depth=${0} ctx=${{expanded:i,toggle:l,onSelect:r,activeLocal:n,filter:u,activeRef:o}} />`:_`<div class="tree-empty">No table of contents in this file.</div>`},Nr=({items:e,filterText:n,onSelect:t})=>{const[r,i]=F(400),s=n.trim().toLowerCase(),o=me(()=>s?e.filter(a=>a.name.toLowerCase().includes(s)):e,[e,s]);return O(()=>i(400),[s,e]),o.length?_`
+    ${o.slice(0,r).map(a=>_`
+      <div class="index-entry" title=${a.name}
+           onClick=${()=>a.targets.length===1&&t(a.targets[0])}>
+        ${a.name}
+        ${a.targets.length>1&&_`
+          <div class="index-targets">
+            ${a.targets.map(u=>_`
+              <div class="index-target" onClick=${l=>{l.stopPropagation(),t(u)}}>
+                ${u.split("/").pop()}
+              </div>`)}
+          </div>`}
+      </div>`)}
+    ${o.length>r&&_`
+      <div class="tree-empty">
+        <button class="btn" onClick=${()=>i(r+800)}>
+          Show more (${o.length-r} left)
+        </button>
+      </div>`}`:_`<div class="tree-empty">
+      ${e.length?"No matching keywords.":"No keyword index in this file."}
+    </div>`},Br=({store:e})=>{const[n,t]=F("toc"),[r,i]=F(""),[s,o]=F(""),{tocTree:a,indexList:u}=e.toc.value;O(()=>{const d=setTimeout(()=>o(r),120);return()=>clearTimeout(d)},[r]);const l=d=>{e.navigateTo(d),window.matchMedia("(max-width: 720px)").matches&&e.updateSettings({sidebarHidden:!0})};return _`
+    <aside id="sidebar" class="sidebar" aria-label="Navigation sidebar">
+      <div class="sidebar-tabs" role="tablist">
+        <button class="tab ${n==="toc"?"active":""}" role="tab"
+                aria-selected=${n==="toc"} onClick=${()=>t("toc")}>Contents</button>
+        <button class="tab ${n==="index"?"active":""}" role="tab"
+                aria-selected=${n==="index"} onClick=${()=>t("index")}>Index</button>
+      </div>
+      <div class="sidebar-search">
+        <input class="input" type="search" placeholder="Filter…" autocomplete="off"
+               aria-label="Filter navigation entries"
+               value=${r} onInput=${d=>i(d.target.value)} />
+      </div>
+      <div class="sidebar-panel" role="tabpanel">
+        ${n==="toc"?_`<${Rr} tree=${a} activeLocal=${e.activeTocPath.value}
+                              filterText=${s} onSelect=${l} />`:_`<${Nr} items=${u} filterText=${s} onSelect=${l} />`}
+      </div>
+    </aside>`};var Or=Symbol.for("preact-signals");function je(){if(H>1)H--;else{var e,n=!1;for((function(){var i=Pe;for(Pe=void 0;i!==void 0;){var s=i.S;if(s.v===i.v)for(var o=s.t;o!==void 0;o=o.x)o.i===i.i&&(o.i=s.i);i=i.o}})();fe!==void 0;){var t=fe;for(fe=void 0,Me++;t!==void 0;){var r=t.u;if(t.u=void 0,t.f&=-3,!(8&t.f)&&lt(t))try{t.c()}catch(i){n||(e=i,n=!0)}t=r}}if(Me=0,H--,n)throw e}}function ee(e){if(H>0)return e();nn=++Ir,H++;try{return e()}finally{je()}}var de,L=void 0;function Ue(e){var n=L,t=de;L=void 0,de=void 0;try{return e()}finally{L=n,de=t}}var fe=void 0,H=0,Me=0,Ir=0,nn=0,Pe=void 0,Re=0;function at(e){if(L!==void 0){var n=e.n;if(n===void 0||n.t!==L)return n={i:0,S:e,p:L.s,n:void 0,t:L,e:void 0,x:void 0,r:n},L.s!==void 0&&(L.s.n=n),L.s=n,e.n=n,32&L.f&&e.S(n),n;if(n.i===-1)return n.i=0,n.n!==void 0&&(n.n.p=n.p,n.p!==void 0&&(n.p.n=n.n),n.p=L.s,n.n=void 0,L.s.n=n,L.s=n),n}}function A(e,n){this.v=e,this.i=0,this.n=void 0,this.t=void 0,this.l=0,this.W=n?.watched,this.Z=n?.unwatched,this.name=n?.name}A.prototype.brand=Or;A.prototype.h=function(){return!0};A.prototype.S=function(e){var n=this,t=this.t;t!==e&&e.e===void 0&&(e.x=t,this.t=e,t!==void 0?t.e=e:Ue(function(){var r;(r=n.W)==null||r.call(n)}))};A.prototype.U=function(e){var n=this;if(this.t!==void 0){var t=e.e,r=e.x;t!==void 0&&(t.x=r,e.e=void 0),r!==void 0&&(r.e=t,e.x=void 0),e===this.t&&(this.t=r,r===void 0&&Ue(function(){var i;(i=n.Z)==null||i.call(n)}))}};A.prototype.subscribe=function(e){var n=this;return ie(function(){var t=n.value;Ue(function(){return e(t)})},{name:"sub"})};A.prototype.valueOf=function(){return this.value};A.prototype.toString=function(){return this.value+""};A.prototype.toJSON=function(){return this.value};A.prototype.peek=function(){var e=this;return Ue(function(){return e.value})};Object.defineProperty(A.prototype,"value",{get:function(){var e=at(this);return e!==void 0&&(e.i=this.i),this.v},set:function(e){if(e!==this.v){if(Me>100)throw new Error("Cycle detected");(function(t){H!==0&&Me===0&&t.l!==nn&&(t.l=nn,Pe={S:t,v:t.v,i:t.i,o:Pe})})(this),this.v=e,this.i++,Re++,H++;try{for(var n=this.t;n!==void 0;n=n.x)n.t.N()}finally{je()}}}});function M(e,n){return new A(e,n)}function lt(e){for(var n=e.s;n!==void 0;n=n.n)if(n.S.i!==n.i||!n.S.h()||n.S.i!==n.i)return!0;return!1}function ct(e){for(var n=e.s;n!==void 0;n=n.n){var t=n.S.n;if(t!==void 0&&(n.r=t),n.S.n=n,n.i=-1,n.n===void 0){e.s=n;break}}}function ut(e){for(var n=e.s,t=void 0;n!==void 0;){var r=n.p;n.i===-1?(n.S.U(n),r!==void 0&&(r.n=n.n),n.n!==void 0&&(n.n.p=r)):t=n,n.S.n=n.r,n.r!==void 0&&(n.r=void 0),n=r}e.s=t}function W(e,n){A.call(this,void 0,n),this.x=e,this.s=void 0,this.g=Re-1,this.f=4}W.prototype=new A;W.prototype.h=function(){if(this.f&=-3,1&this.f)return!1;if((36&this.f)==32||(this.f&=-5,this.g===Re))return!0;if(this.g=Re,this.f|=1,this.i>0&&!lt(this))return this.f&=-2,!0;var e=L;try{ct(this),L=this;var n=this.x();(16&this.f||this.v!==n||this.i===0)&&(this.v=n,this.f&=-17,this.i++)}catch(t){this.v=t,this.f|=16,this.i++}return L=e,ut(this),this.f&=-2,!0};W.prototype.S=function(e){if(this.t===void 0){this.f|=36;for(var n=this.s;n!==void 0;n=n.n)n.S.S(n)}A.prototype.S.call(this,e)};W.prototype.U=function(e){if(this.t!==void 0&&(A.prototype.U.call(this,e),this.t===void 0)){this.f&=-33;for(var n=this.s;n!==void 0;n=n.n)n.S.U(n)}};W.prototype.N=function(){if(!(2&this.f)){this.f|=6;for(var e=this.t;e!==void 0;e=e.x)e.t.N()}};Object.defineProperty(W.prototype,"value",{get:function(){if(1&this.f)throw new Error("Cycle detected");var e=at(this);if(this.h(),e!==void 0&&(e.i=this.i),16&this.f)throw this.v;return this.v}});function V(e,n){return new W(e,n)}function dt(e){var n=e.m;if(e.m=void 0,typeof n=="function"){H++;var t=L;L=void 0;try{n()}catch(r){throw e.f&=-2,e.f|=8,_n(e),r}finally{L=t,je()}}}function _n(e){for(var n=e.s;n!==void 0;n=n.n)n.S.U(n);e.x=void 0,e.s=void 0,dt(e)}function zr(e){if(L!==this)throw new Error("Out-of-order effect");ut(this),L=e,this.f&=-2,8&this.f&&_n(this),je()}function se(e,n){this.x=e,this.m=void 0,this.s=void 0,this.u=void 0,this.f=32,this.name=n?.name,de&&de.push(this)}se.prototype.c=function(){var e=this.S();try{if(8&this.f||this.x===void 0)return;var n=this.x();typeof n=="function"&&(this.m=n)}finally{e()}};se.prototype.S=function(){if(1&this.f)throw new Error("Cycle detected");this.f|=1,this.f&=-9,dt(this),ct(this),H++;var e=L;return L=this,zr.bind(this,e)};se.prototype.N=function(){2&this.f||(this.f|=2,this.u=fe,fe=this)};se.prototype.d=function(){this.f|=8,1&this.f||_n(this)};se.prototype.dispose=function(){this.d()};function ie(e,n){var t=new se(e,n);try{t.c()}catch(i){throw t.d(),i}var r=t.d.bind(t);return r[Symbol.dispose]=r,r}var ft,we,Dr=typeof window<"u"&&!!window.__PREACT_SIGNALS_DEVTOOLS__,ht=[];ie(function(){ft=this.N})();function oe(e,n){y[e]=n.bind(null,y[e]||function(){})}function Ne(e){if(we){var n=we;we=void 0,n()}we=e&&e.S()}function pt(e){var n=this,t=e.data,r=jr(t);r.name="ReactiveDom",r.value=t;var i=me(function(){for(var a=n,u=n.__v;u=u.__;)if(u.__c){u.__c.__$f|=4;break}var l=V(function(){var h=r.value.value;return h===0?0:h===!0?"":h||""}),d=V(function(){return!Array.isArray(l.value)&&!Un(l.value)}),f=ie(function(){if(this.N=mt,d.value){var h=l.value;a.__v&&a.__v.__e&&a.__v.__e.nodeType===3&&(a.__v.__e.data=h)}}),c=n.__$u.d;return n.__$u.d=function(){f(),c.call(this)},[d,l]},[]),s=i[0],o=i[1];return s.value?o.peek():o.value}pt.displayName="ReactiveTextNode";Object.defineProperties(A.prototype,{constructor:{configurable:!0,value:void 0},type:{configurable:!0,value:pt},props:{configurable:!0,get:function(){var e=this;return{data:{get value(){return e.value}}}}},__b:{configurable:!0,value:1}});oe("__b",function(e,n){if(typeof n.type=="string"){var t,r=n.props;for(var i in r)if(i!=="children"){var s=r[i];s instanceof A&&(t||(n.__np=t={}),t[i]=s,r[i]=s.peek())}}e(n)});oe("__r",function(e,n){if(e(n),n.type!==pe){Ne();var t,r=n.__c;r&&(r.__$f&=-2,(t=r.__$u)===void 0&&(r.__$u=t=(function(i,s){var o;return ie(function(){o=this},{name:s}),o.c=i,o})(function(){var i;Dr&&((i=t.y)==null||i.call(t)),r.__$f|=1,r.setState({})},typeof n.type=="function"?n.type.displayName||n.type.name:""))),Ne(t)}});oe("__e",function(e,n,t,r){Ne(),e(n,t,r)});oe("diffed",function(e,n){Ne();var t;if(typeof n.type=="string"&&(t=n.__e)){var r=n.__np,i=n.props,s=t.U;if(s)for(var o in s){var a=s[o];a===void 0||r&&o in r||(a.d(),s[o]=void 0)}if(r){s||(s={},t.U=s);for(var u in r){var l=s[u],d=r[u];l===void 0?(l=Hr(t,u,d,i),s[u]=l):l.o(d,i)}}}e(n)});function Hr(e,n,t,r){var i=n in e&&e.ownerSVGElement===void 0,s=M(t);return{o:function(o,a){s.value=o,r=a},d:ie(function(){this.N=mt;var o=s.value.value;r[n]!==o&&(r[n]=o,i?e[n]=o:o!=null&&(o!==!1||n[4]==="-")?e.setAttribute(n,o):e.removeAttribute(n))})}}oe("unmount",function(e,n){if(typeof n.type=="string"){var t=n.__e;if(t){var r=t.U;if(r){t.U=void 0;for(var i in r){var s=r[i];s&&s.d()}}}var o=n.__np;if(o){var a=n.props;for(var u in o)a[u]=o[u]}n.__np=void 0}else{var l=n.__c;if(l){var d=l.__$u;d&&(l.__$u=void 0,d.d())}}e(n)});oe("__h",function(e,n,t,r){r<3&&(n.__$f|=2),e(n,t,r)});ce.prototype.shouldComponentUpdate=function(e,n){if(this.__R)return!0;var t=this.__$u,r=t&&t.s!==void 0;for(var i in n)return!0;if(this.__f||typeof this.u=="boolean"&&this.u===!0){var s=2&this.__$f;if(!(r||s||4&this.__$f)||1&this.__$f)return!0}else if(!(r||4&this.__$f)||3&this.__$f)return!0;for(var o in e)if(o!=="__source"&&e[o]!==this.props[o])return!0;for(var a in this.props)if(!(a in e))return!0;return!1};function jr(e,n){return me(function(){return M(e,n)},[])}var Ur=function(e){queueMicrotask(function(){queueMicrotask(e)})};function Fr(){ee(function(){for(var e;e=ht.shift();)ft.call(e)})}function mt(){ht.push(this)===1&&(y.requestAnimationFrame||Ur)(Fr)}const _t="chmv:settings",Xr=[{id:"light",label:"Clean Light"},{id:"sepia",label:"Sepia"},{id:"dark",label:"Warm Dark"},{id:"oled",label:"OLED Black"}],tn=[{id:"sans",label:"黑体 / Sans",stack:'-apple-system, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif'},{id:"serif",label:"宋体 / Serif",stack:'Georgia, "Times New Roman", "Songti SC", SimSun, "Noto Serif CJK SC", "Source Han Serif SC", serif'},{id:"kai",label:"楷体 / Kai",stack:'"Kaiti SC", KaiTi, "AR PL UKai CN", "TW-Kai", cursive, serif'},{id:"mono",label:"Monospace",stack:'ui-monospace, SFMono-Regular, Consolas, "Sarasa Mono SC", monospace'}],rn=[{id:"600",label:"600px",css:"600px"},{id:"800",label:"800px",css:"800px"},{id:"1000",label:"1000px",css:"1000px"},{id:"full",label:"Full",css:"100%"}],Pn={theme:"light",font:"sans",width:"800",fontSize:19,lineHeight:1.9,letterSpacing:.02,paraSpacing:.9,overrideStyles:!0,scrollMode:"paged",sidebarWidth:300,sidebarHidden:!1},Vr=()=>{try{return{...Pn,...JSON.parse(localStorage.getItem(_t)||"{}")}}catch{return{...Pn}}},Be=M(Vr()),Zr=e=>{Be.value={...Be.value,...e}},Gr=e=>Math.min(34,Math.max(12,e));typeof document<"u"&&ie(()=>{const e=Be.value;try{localStorage.setItem(_t,JSON.stringify(e))}catch{}const n=tn.find(i=>i.id===e.font)??tn[0],t=rn.find(i=>i.id===e.width)??rn[1],r=document.documentElement;r.dataset.theme=e.theme;for(const[i,s]of Object.entries({"--reader-font":n.stack,"--reader-font-size":`${e.fontSize}px`,"--reader-line-height":String(e.lineHeight),"--reader-letter-spacing":`${e.letterSpacing}em`,"--reader-para-spacing":`${e.paraSpacing}em`,"--reader-measure":t.css,"--sidebar-width":`${e.sidebarWidth}px`}))r.style.setProperty(i,s)});const We=({options:e,current:n,onPick:t,label:r})=>_`
+  <div class="seg-row" role="radiogroup" aria-label=${r}>
+    ${e.map(i=>_`
+      <button class="seg-btn" type="button" role="radio"
+              aria-checked=${i.id===n}
+              onClick=${()=>t(i.id)}>${i.label}</button>`)}
+  </div>`,ye=({label:e,value:n,format:t,onInput:r,...i})=>_`
+  <label>${e} <span class="set-val">${t(n)}</span>
+    <input type="range" value=${n} onInput=${s=>r(Number(s.target.value))} ...${i} />
+  </label>`,Rn=({checked:e,onChange:n,title:t,hint:r})=>_`
+  <label class="check-row">
+    <input type="checkbox" checked=${e} onChange=${i=>n(i.target.checked)} />
+    <span>${t}<br /><small>${r}</small></span>
+  </label>`,Wr=({store:e,onClose:n})=>{const t=e.settings.value,r=i=>e.updateSettings(i);return O(()=>{const i=()=>n(),s=o=>o.key==="Escape"&&n();return document.addEventListener("click",i),document.addEventListener("keydown",s),()=>{document.removeEventListener("click",i),document.removeEventListener("keydown",s)}},[]),_`
+    <div class="settings-panel" role="dialog" aria-label="Reading settings"
+         onClick=${i=>i.stopPropagation()}>
+      <div class="set-group">
+        <div class="set-title">Theme</div>
+        <${We} options=${Xr} current=${t.theme} label="Color theme"
+                   onPick=${i=>r({theme:i})} />
+      </div>
+      <div class="set-group">
+        <div class="set-title">Font family</div>
+        <${We} options=${tn} current=${t.font} label="Font family"
+                   onPick=${i=>r({font:i})} />
+      </div>
+      <div class="set-group">
+        <div class="set-title">Content width</div>
+        <${We} options=${rn} current=${t.width} label="Content width"
+                   onPick=${i=>r({width:i})} />
+      </div>
+      <div class="set-group sliders">
+        <${ye} label="Font size" min="12" max="34" step="1"
+                   value=${t.fontSize} format=${i=>`${i}px`}
+                   onInput=${i=>r({fontSize:i})} />
+        <${ye} label="Line height" min="1.3" max="2.6" step="0.05"
+                   value=${t.lineHeight} format=${i=>i.toFixed(2)}
+                   onInput=${i=>r({lineHeight:i})} />
+        <${ye} label="Letter spacing" min="0" max="0.12" step="0.005"
+                   value=${t.letterSpacing} format=${i=>`${i.toFixed(3)}em`}
+                   onInput=${i=>r({letterSpacing:i})} />
+        <${ye} label="Paragraph spacing" min="0.2" max="2.2" step="0.05"
+                   value=${t.paraSpacing} format=${i=>`${i.toFixed(2)}em`}
+                   onInput=${i=>r({paraSpacing:i})} />
+      </div>
+      <div class="set-group">
+        <${Rn} checked=${t.overrideStyles}
+                  onChange=${i=>r({overrideStyles:i})}
+                  title="Override legacy page styles"
+                  hint="Strip hardcoded colors & fonts from vintage HTML" />
+        <${Rn} checked=${t.scrollMode==="infinite"}
+                  onChange=${i=>r({scrollMode:i?"infinite":"paged"})}
+                  title="Continuous scroll"
+                  hint="Load next chapters automatically while scrolling" />
+      </div>
+      <div class="set-group set-hints">
+        <div class="set-title">Keyboard</div>
+        <small>← / → or J / K — chapters · Space / Shift+Space — page ·
+               B — sidebar · F — focus mode · Ctrl +/− — font size</small>
+      </div>
+    </div>`},Nn=({store:e,edge:n})=>{const t=e.currentPos.value,r=e.spine.value,i=t>0?e.tocLabelOf(r[t-1]):"",s=t>=0&&t<r.length-1?e.tocLabelOf(r[t+1]):"";return _`
+  <button class="nav-btn ${n==="bottom"?"labeled":""}"
+          disabled=${!e.hasPrev.value} title=${i||"Previous chapter (←)"}
+          onClick=${()=>e.gotoSibling(-1)}>
+    ${n==="top"?"‹ Prev":`‹ ${i||"Previous chapter"}`}
+  </button>
+  ${n==="top"&&_`
+    <span class="nav-pos">
+      ${t>=0?`${t+1} / ${r.length} · ${Math.round((t+1)/Math.max(1,r.length)*100)}% · ${e.tocLabelOf(e.currentPath.value)}`:""}
+    </span>`}
+  <button class="nav-btn ${n==="bottom"?"labeled":""}"
+          disabled=${!e.hasNext.value} title=${s||"Next chapter (→)"}
+          onClick=${()=>e.gotoSibling(1)}>
+    ${n==="top"?"Next ›":`${s||"Next chapter"} ›`}
+  </button>`},Yr=({store:e})=>{const n=s=>{s.target.setPointerCapture(s.pointerId),s.target.classList.add("dragging")},t=s=>{if(!s.target.hasPointerCapture?.(s.pointerId))return;const o=Math.min(Math.max(s.clientX,180),window.innerWidth*.6);e.updateSettings({sidebarWidth:Math.round(o)})},r=s=>s.target.classList.remove("dragging");return _`
+    <div class="splitter" role="separator" aria-orientation="vertical" aria-label="Resize sidebar"
+         tabindex="0" onPointerDown=${n} onPointerMove=${t}
+         onPointerUp=${r} onPointerCancel=${r} onKeyDown=${s=>{if(s.key!=="ArrowLeft"&&s.key!=="ArrowRight")return;s.preventDefault();const o=(s.shiftKey?40:12)*(s.key==="ArrowLeft"?-1:1),a=Math.min(Math.max(e.settings.value.sidebarWidth+o,180),Math.round(window.innerWidth*.6));e.updateSettings({sidebarWidth:a})}} />`},Kr=({store:e})=>{const n=ue(null),t=ue(null),[r,i]=F(!1),{onScroll:s}=Ar(e,n,t),o=e.settings.value,a=e.focusMode.value,u=()=>e.updateSettings({sidebarHidden:!o.sidebarHidden}),l=ue(!1),d=()=>{l.current||(l.current=!0,requestAnimationFrame(()=>{l.current=!1,s()}))};return _`
+    <div id="reader" class="screen">
+      <header class="topbar">
+        <div class="topbar-group">
+          <button class="icon-btn" title="Back to library (Esc)" aria-label="Back to library"
+                  onClick=${()=>e.goHome()}><${qt} /></button>
+          <button class="icon-btn" title="Toggle sidebar (B)" aria-label="Toggle sidebar"
+                  aria-pressed=${!o.sidebarHidden} onClick=${u}><${Jt} /></button>
+          <div class="book-heading">
+            <span class="book-title" role="heading" aria-level="1">${e.bookTitle.value}</span>
+            ${e.currentPath.value&&_`
+              <span class="book-subtitle">${e.tocLabelOf(e.currentPath.value)}</span>`}
+          </div>
+        </div>
+        <div class="topbar-group">
+          <label class="enc-label" title="Text encoding"><span aria-hidden="true">文A</span></label>
+          <select class="select" aria-label="Text encoding"
+                  value=${e.encodingOverride.value}
+                  onChange=${f=>e.switchEncoding(f.target.value)}>
+            ${ur.map(f=>_`
+              <option value=${f.value}>
+                ${f.value===""?`Auto (${e.book.value?.encoding??"utf-8"})`:f.label}
+              </option>`)}
+          </select>
+          <button class="icon-btn" title="Distraction-free mode (F)" aria-pressed=${a}
+                  aria-label="Distraction-free mode"
+                  onClick=${()=>e.focusMode.value=!a}><${Qt} /></button>
+          <button class="icon-btn" title="Reading settings" aria-expanded=${r}
+                  aria-label="Reading settings"
+                  onClick=${f=>{f.stopPropagation(),i(!r)}}>
+            <${nr} />
+          </button>
+        </div>
+      </header>
+
+      <div class="reader-body">
+        <${Br} store=${e} />
+        <${Yr} store=${e} />
+        <div class="content-col">
+          <nav class="chapter-nav top" aria-label="Chapter navigation (top)">
+            <${Nn} store=${e} edge="top" />
+          </nav>
+          <div class="scroller" tabindex="0" ref=${t} onScroll=${d}>
+            <div class="reading-measure">
+              <div ref=${n} />
+              ${e.loading.value&&_`
+                <div class="loading"><div class="spinner" /><span>${e.loading.value}</span></div>`}
+            </div>
+            <nav class="chapter-nav bottom" aria-label="Chapter navigation (bottom)">
+              <${Nn} store=${e} edge="bottom" />
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      ${a&&_`
+        <div class="focus-exit">
+          <button class="icon-btn" title="Exit distraction-free mode (F)"
+                  aria-label="Exit distraction-free mode"
+                  onClick=${()=>e.focusMode.value=!1}><${er} /></button>
+        </div>`}
+
+      ${r&&_`<${Wr} store=${e} onClose=${()=>i(!1)} />`}
+    </div>`},qr=e=>e&&(e.tagName==="INPUT"||e.tagName==="TEXTAREA"||e.tagName==="SELECT"||e.isContentEditable),Jr=e=>{O(()=>{const n=t=>{const r=e.screen.value==="reader";if((t.ctrlKey||t.metaKey)&&!t.altKey){if(!r)return;const l=e.settings.value.fontSize,d={"=":1,"+":1,"-":-1}[t.key];d?(t.preventDefault(),e.updateSettings({fontSize:Gr(l+d)})):t.key==="0"&&(t.preventDefault(),e.updateSettings({fontSize:19}));return}if(!r||qr(t.target))return;const i=()=>{const l=document.querySelector(".scroller");l?.scrollBy({top:l.clientHeight*.88*(t.shiftKey?-1:1),behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})},s=()=>e.updateSettings({sidebarHidden:!e.settings.value.sidebarHidden}),o=()=>e.focusMode.value=!e.focusMode.value,u={arrowright:()=>e.gotoSibling(1),j:()=>e.gotoSibling(1),arrowleft:()=>e.gotoSibling(-1),k:()=>e.gotoSibling(-1)," ":i,b:s,f:o,escape:()=>e.focusMode.value?o():e.goHome()}[t.key.toLowerCase()];u&&(t.preventDefault(),u())};return document.addEventListener("keydown",n),()=>document.removeEventListener("keydown",n)},[])},Qr=({store:e})=>{Jr(e);const{sidebarHidden:n}=e.settings.value,t=e.focusMode.value;return O(()=>{document.body.classList.toggle("sidebar-hidden",n),document.body.classList.toggle("focus-mode",t)},[n,t]),_`
+    ${e.screen.value==="home"?_`<${or} store=${e} />`:_`<${Kr} store=${e} />`}
+    ${e.toast.value&&_`
+      <div class="toast" role="status" aria-live="polite">${e.toast.value.text}</div>`}`};function es({createEngine:e,library:n,hashFile:t}){const r=M("home"),i=M([]),s=M(null),o=M(""),a=M({tocTree:[],indexList:[]}),u=M([]),l=M(null),d=M(""),f=M(null),c=M(null),h=M(!1),E=M(null),$=V(()=>new Map(u.value.map((p,v)=>[p.toLowerCase(),v]))),k=V(()=>{const p=l.value;return p?$.value.get(p.toLowerCase())??-1:-1}),x=V(()=>k.value>0),w=V(()=>k.value>=0&&k.value<u.value.length-1);let m={engine:null,file:null,hash:null,navToken:0,saveTimer:0},N={renderChapter:async()=>null,getScrollState:()=>({scroll:0,ratio:0}),reset:()=>{}};const z=p=>{N={...N,...p}};let X=0;const P=(p,v=3200)=>{const g=++X;c.value={text:p,id:g},setTimeout(()=>{c.value&&c.value.id===g&&(c.value=null)},v)},Y=V(()=>{const p=new Map,v=g=>g.forEach(b=>{if(b.local){const S=b.local.toLowerCase();p.has(S)||p.set(S,b.name)}v(b.children)});return v(a.value.tocTree),p}),K=p=>p&&Y.value.get(p.toLowerCase())||(p?p.split("/").pop():""),B=p=>{const v=new Set,g=[],b=R=>{const j=R.toLowerCase();v.has(j)||(v.add(j),g.push(R))},S=R=>R.forEach(j=>{j.local&&b(j.local),S(j.children)});return S(p.tocTree),p.docPaths.forEach(b),g},I=async()=>{i.value=await n.listBooks().catch(()=>[])},ae=async()=>{if(!m.hash||!l.value)return;const{scroll:p,ratio:v}=N.getScrollState(),g=k.value,b=Math.max(0,Math.min(1,(g+Math.min(1,v))/Math.max(1,u.value.length))),S=await n.getBook(m.hash)||{hash:m.hash};await n.putBook({...S,fileName:m.file?.name??S.fileName,title:o.value,fileSize:m.file?.size??S.fileSize,chapter:l.value,scroll:p,progress:b,encoding:d.value,lastOpened:Date.now()}).catch(()=>{})},_e=()=>{clearTimeout(m.saveTimer),m.saveTimer=setTimeout(ae,800)},$t=()=>{clearTimeout(m.saveTimer),m.engine?.terminate(),m={...m,engine:null,file:null,hash:null},m.navToken++,N.reset()},At=(p,v,g)=>{const b=p.title||v.name.replace(/\.chm$/i,"");return ee(()=>{s.value=p,o.value=b,d.value=g,a.value={tocTree:p.tocTree,indexList:p.indexList},u.value=B(p)}),document.title=`${b} · chmv`,b},Mt=async p=>{const v=p?.chapter&&$.value.has(p.chapter.toLowerCase())?p.chapter:u.value[0];if(!v){f.value=null,P("This CHM contains no HTML documents.");return}const g=p?.chapter===v?p.scroll:0;await ge(v,{scrollTo:g}),g>4&&P("Resumed where you left off.")},gn=async(p,v=null)=>{if(p){/\.chm$/i.test(p.name)||P("File does not end in .chm — trying to parse it anyway…"),ee(()=>{r.value="reader",f.value=`Parsing ${p.name}…`,o.value=p.name,l.value=null}),$t();try{const g=await t(p),b=await n.getBook(g),S=e(),R=b?.encoding||"",j=await S.open(p,R||null);m={...m,engine:S,file:p,hash:g};const Dt=At(j,p,R);await n.putBook({chapter:null,scroll:0,progress:0,firstOpened:Date.now(),...b,hash:g,fileName:p.name,title:Dt,fileSize:p.size,lastOpened:Date.now(),encoding:R}),v&&await n.putHandle(g,v),await Mt(b)}catch(g){console.error(g),f.value=null,P(`Could not open file: ${g.message}`,6e3),vn()}}},ge=async(p,{fragment:v="",scrollTo:g=0}={})=>{if(!m.engine)return;const b=++m.navToken;f.value="Loading chapter…";let S;try{S=await m.engine.get(p)}catch(R){f.value=null,P(`Failed to load ${p}: ${R.message}`);return}if(b===m.navToken){if(!S.found){f.value=null,P(`Not found in archive: ${p}`);return}if(!S.isHtml){if(/^(image|text|application\/pdf)/.test(S.mime||"")){const R=URL.createObjectURL(new Blob([S.buffer],{type:S.mime}));window.open(R,"_blank","noopener"),setTimeout(()=>URL.revokeObjectURL(R),6e4)}else P(`Can't display ${p.split("/").pop()} (${S.mime||"binary"}).`);f.value=null;return}await N.renderChapter(p,new Uint8Array(S.buffer),{fragment:v,scrollTo:g}),b===m.navToken&&(ee(()=>{l.value=p,E.value=p,f.value=null}),_e())}},Pt=(p,v=l.value)=>{const g=v?$.value.get(v.toLowerCase())??-1:-1;if(g<0)return;const b=g+p;if(b<0)return P("Already at the first chapter.");if(b>=u.value.length)return P("Already at the last chapter.");ge(u.value[b])},Rt=async(p,v)=>{const g=$.value.get(p.toLowerCase())??-1,b=u.value[g+v];if(g<0||!b||!m.engine)return null;const S=await m.engine.get(b);return S.found&&S.isHtml?{path:b,bytes:new Uint8Array(S.buffer),label:K(b)}:null},Nt=async p=>{if(d.value=p||"",!(!m.engine||!s.value)){try{const v=await m.engine.sitemaps(p||s.value.encoding);a.value=v}catch{}if(l.value){const{ratio:v}=N.getScrollState();await ge(l.value,{scrollTo:{ratio:v}})}_e()}},Bt=p=>{p&&p!==l.value&&ee(()=>{l.value=p,E.value=p}),_e()},Ot=async(p,v)=>{const g=await n.getHandle(p.hash);if(g)try{let b=await g.queryPermission({mode:"read"});if(b==="prompt"&&(b=await g.requestPermission({mode:"read"})),b==="granted")return gn(await g.getFile(),g)}catch{}P(`Pick “${p.fileName}” again — the browser can't reopen files without permission.`),v?.()},It=async p=>{await n.deleteBook(p),I()},vn=()=>{clearTimeout(m.saveTimer),ae(),m.engine?.dropCaches().catch(()=>{}),ee(()=>{r.value="home",h.value=!1}),document.title="chmv · CHM Reader",I()},zt=p=>m.engine?m.engine.get(p):Promise.resolve({found:!1});return document.addEventListener("visibilitychange",()=>{document.visibilityState==="hidden"&&ae()}),window.addEventListener("pagehide",ae),{screen:r,shelf:i,book:s,bookTitle:o,toc:a,spine:u,currentPath:l,encodingOverride:d,loading:f,toast:c,focusMode:h,activeTocPath:E,currentPos:k,hasPrev:x,hasNext:w,settings:Be,openFile:gn,navigateTo:ge,gotoSibling:Pt,fetchSibling:Rt,switchEncoding:Nt,setVisiblePath:Bt,reopenFromShelf:Ot,removeFromShelf:It,goHome:vn,refreshShelf:I,saveProgress:ae,scheduleSave:_e,notify:P,updateSettings:Zr,tocLabelOf:K,connectView:z,fetchAsset:zt}}/**
+ * @license
+ * Copyright 2019 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */const gt=Symbol("Comlink.proxy"),ns=Symbol("Comlink.endpoint"),vt=Symbol("Comlink.releaseProxy"),Ye=Symbol("Comlink.finalizer"),xe=Symbol("Comlink.thrown"),bt=e=>typeof e=="object"&&e!==null||typeof e=="function",ts={canHandle:e=>bt(e)&&e[gt],serialize(e){const{port1:n,port2:t}=new MessageChannel;return yt(e,n),[t,[t]]},deserialize(e){return e.start(),St(e)}},rs={canHandle:e=>bt(e)&&xe in e,serialize({value:e}){let n;return e instanceof Error?n={isError:!0,value:{message:e.message,name:e.name,stack:e.stack}}:n={isError:!1,value:e},[n,[]]},deserialize(e){throw e.isError?Object.assign(new Error(e.value.message),e.value):e.value}},wt=new Map([["proxy",ts],["throw",rs]]);function ss(e,n){for(const t of e)if(n===t||t==="*"||t instanceof RegExp&&t.test(n))return!0;return!1}function yt(e,n=globalThis,t=["*"]){n.addEventListener("message",function r(i){if(!i||!i.data)return;if(!ss(t,i.origin)){console.warn(`Invalid origin '${i.origin}' for comlink proxy`);return}const{id:s,type:o,path:a}=Object.assign({path:[]},i.data),u=(i.data.argumentList||[]).map(Z);let l;try{const d=a.slice(0,-1).reduce((c,h)=>c[h],e),f=a.reduce((c,h)=>c[h],e);switch(o){case"GET":l=f;break;case"SET":d[a.slice(-1)[0]]=Z(i.data.value),l=!0;break;case"APPLY":l=f.apply(d,u);break;case"CONSTRUCT":{const c=new f(...u);l=us(c)}break;case"ENDPOINT":{const{port1:c,port2:h}=new MessageChannel;yt(e,h),l=cs(c,[c])}break;case"RELEASE":l=void 0;break;default:return}}catch(d){l={value:d,[xe]:0}}Promise.resolve(l).catch(d=>({value:d,[xe]:0})).then(d=>{const[f,c]=ze(d);n.postMessage(Object.assign(Object.assign({},f),{id:s}),c),o==="RELEASE"&&(n.removeEventListener("message",r),Et(n),Ye in e&&typeof e[Ye]=="function"&&e[Ye]())}).catch(d=>{const[f,c]=ze({value:new TypeError("Unserializable return value"),[xe]:0});n.postMessage(Object.assign(Object.assign({},f),{id:s}),c)})}),n.start&&n.start()}function is(e){return e.constructor.name==="MessagePort"}function Et(e){is(e)&&e.close()}function St(e,n){const t=new Map;return e.addEventListener("message",function(i){const{data:s}=i;if(!s||!s.id)return;const o=t.get(s.id);if(o)try{o(s)}finally{t.delete(s.id)}}),sn(e,t,[],n)}function Ee(e){if(e)throw new Error("Proxy has been released and is not useable")}function Lt(e){return ne(e,new Map,{type:"RELEASE"}).then(()=>{Et(e)})}const Oe=new WeakMap,Ie="FinalizationRegistry"in globalThis&&new FinalizationRegistry(e=>{const n=(Oe.get(e)||0)-1;Oe.set(e,n),n===0&&Lt(e)});function os(e,n){const t=(Oe.get(n)||0)+1;Oe.set(n,t),Ie&&Ie.register(e,n,e)}function as(e){Ie&&Ie.unregister(e)}function sn(e,n,t=[],r=function(){}){let i=!1;const s=new Proxy(r,{get(o,a){if(Ee(i),a===vt)return()=>{as(s),Lt(e),n.clear(),i=!0};if(a==="then"){if(t.length===0)return{then:()=>s};const u=ne(e,n,{type:"GET",path:t.map(l=>l.toString())}).then(Z);return u.then.bind(u)}return sn(e,n,[...t,a])},set(o,a,u){Ee(i);const[l,d]=ze(u);return ne(e,n,{type:"SET",path:[...t,a].map(f=>f.toString()),value:l},d).then(Z)},apply(o,a,u){Ee(i);const l=t[t.length-1];if(l===ns)return ne(e,n,{type:"ENDPOINT"}).then(Z);if(l==="bind")return sn(e,n,t.slice(0,-1));const[d,f]=Bn(u);return ne(e,n,{type:"APPLY",path:t.map(c=>c.toString()),argumentList:d},f).then(Z)},construct(o,a){Ee(i);const[u,l]=Bn(a);return ne(e,n,{type:"CONSTRUCT",path:t.map(d=>d.toString()),argumentList:u},l).then(Z)}});return os(s,e),s}function ls(e){return Array.prototype.concat.apply([],e)}function Bn(e){const n=e.map(ze);return[n.map(t=>t[0]),ls(n.map(t=>t[1]))]}const kt=new WeakMap;function cs(e,n){return kt.set(e,n),e}function us(e){return Object.assign(e,{[gt]:!0})}function ze(e){for(const[n,t]of wt)if(t.canHandle(e)){const[r,i]=t.serialize(e);return[{type:"HANDLER",name:n,value:r},i]}return[{type:"RAW",value:e},kt.get(e)||[]]}function Z(e){switch(e.type){case"HANDLER":return wt.get(e.name).deserialize(e.value);case"RAW":return e.value}}function ne(e,n,t,r){return new Promise(i=>{const s=ds();n.set(s,i),e.start&&e.start(),e.postMessage(Object.assign({id:s},t),r)})}function ds(){return new Array(4).fill(0).map(()=>Math.floor(Math.random()*Number.MAX_SAFE_INTEGER).toString(16)).join("-")}function fs(){const e=`"use strict";
+(() => {
+  // node_modules/comlink/dist/esm/comlink.mjs
+  var proxyMarker = Symbol("Comlink.proxy");
+  var createEndpoint = Symbol("Comlink.endpoint");
+  var releaseProxy = Symbol("Comlink.releaseProxy");
+  var finalizer = Symbol("Comlink.finalizer");
+  var throwMarker = Symbol("Comlink.thrown");
+  var isObject = (val) => typeof val === "object" && val !== null || typeof val === "function";
+  var proxyTransferHandler = {
+    canHandle: (val) => isObject(val) && val[proxyMarker],
+    serialize(obj) {
+      const { port1, port2 } = new MessageChannel();
+      expose(obj, port1);
+      return [port2, [port2]];
+    },
+    deserialize(port) {
+      port.start();
+      return wrap(port);
+    }
+  };
+  var throwTransferHandler = {
+    canHandle: (value) => isObject(value) && throwMarker in value,
+    serialize({ value }) {
+      let serialized;
+      if (value instanceof Error) {
+        serialized = {
+          isError: true,
+          value: {
+            message: value.message,
+            name: value.name,
+            stack: value.stack
+          }
+        };
+      } else {
+        serialized = { isError: false, value };
+      }
+      return [serialized, []];
+    },
+    deserialize(serialized) {
+      if (serialized.isError) {
+        throw Object.assign(new Error(serialized.value.message), serialized.value);
+      }
+      throw serialized.value;
+    }
+  };
+  var transferHandlers = /* @__PURE__ */ new Map([
+    ["proxy", proxyTransferHandler],
+    ["throw", throwTransferHandler]
+  ]);
+  function isAllowedOrigin(allowedOrigins, origin) {
+    for (const allowedOrigin of allowedOrigins) {
+      if (origin === allowedOrigin || allowedOrigin === "*") {
+        return true;
+      }
+      if (allowedOrigin instanceof RegExp && allowedOrigin.test(origin)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  function expose(obj, ep = globalThis, allowedOrigins = ["*"]) {
+    ep.addEventListener("message", function callback(ev) {
+      if (!ev || !ev.data) {
+        return;
+      }
+      if (!isAllowedOrigin(allowedOrigins, ev.origin)) {
+        console.warn(\`Invalid origin '\${ev.origin}' for comlink proxy\`);
+        return;
+      }
+      const { id, type, path } = Object.assign({ path: [] }, ev.data);
+      const argumentList = (ev.data.argumentList || []).map(fromWireValue);
+      let returnValue;
+      try {
+        const parent = path.slice(0, -1).reduce((obj2, prop) => obj2[prop], obj);
+        const rawValue = path.reduce((obj2, prop) => obj2[prop], obj);
+        switch (type) {
+          case "GET":
+            {
+              returnValue = rawValue;
+            }
+            break;
+          case "SET":
+            {
+              parent[path.slice(-1)[0]] = fromWireValue(ev.data.value);
+              returnValue = true;
+            }
+            break;
+          case "APPLY":
+            {
+              returnValue = rawValue.apply(parent, argumentList);
+            }
+            break;
+          case "CONSTRUCT":
+            {
+              const value = new rawValue(...argumentList);
+              returnValue = proxy(value);
+            }
+            break;
+          case "ENDPOINT":
+            {
+              const { port1, port2 } = new MessageChannel();
+              expose(obj, port2);
+              returnValue = transfer(port1, [port1]);
+            }
+            break;
+          case "RELEASE":
+            {
+              returnValue = void 0;
+            }
+            break;
+          default:
+            return;
+        }
+      } catch (value) {
+        returnValue = { value, [throwMarker]: 0 };
+      }
+      Promise.resolve(returnValue).catch((value) => {
+        return { value, [throwMarker]: 0 };
+      }).then((returnValue2) => {
+        const [wireValue, transferables] = toWireValue(returnValue2);
+        ep.postMessage(Object.assign(Object.assign({}, wireValue), { id }), transferables);
+        if (type === "RELEASE") {
+          ep.removeEventListener("message", callback);
+          closeEndPoint(ep);
+          if (finalizer in obj && typeof obj[finalizer] === "function") {
+            obj[finalizer]();
+          }
+        }
+      }).catch((error) => {
+        const [wireValue, transferables] = toWireValue({
+          value: new TypeError("Unserializable return value"),
+          [throwMarker]: 0
+        });
+        ep.postMessage(Object.assign(Object.assign({}, wireValue), { id }), transferables);
+      });
+    });
+    if (ep.start) {
+      ep.start();
+    }
+  }
+  function isMessagePort(endpoint) {
+    return endpoint.constructor.name === "MessagePort";
+  }
+  function closeEndPoint(endpoint) {
+    if (isMessagePort(endpoint))
+      endpoint.close();
+  }
+  function wrap(ep, target) {
+    const pendingListeners = /* @__PURE__ */ new Map();
+    ep.addEventListener("message", function handleMessage(ev) {
+      const { data } = ev;
+      if (!data || !data.id) {
+        return;
+      }
+      const resolver = pendingListeners.get(data.id);
+      if (!resolver) {
+        return;
+      }
+      try {
+        resolver(data);
+      } finally {
+        pendingListeners.delete(data.id);
+      }
+    });
+    return createProxy(ep, pendingListeners, [], target);
+  }
+  function throwIfProxyReleased(isReleased) {
+    if (isReleased) {
+      throw new Error("Proxy has been released and is not useable");
+    }
+  }
+  function releaseEndpoint(ep) {
+    return requestResponseMessage(ep, /* @__PURE__ */ new Map(), {
+      type: "RELEASE"
+    }).then(() => {
+      closeEndPoint(ep);
+    });
+  }
+  var proxyCounter = /* @__PURE__ */ new WeakMap();
+  var proxyFinalizers = "FinalizationRegistry" in globalThis && new FinalizationRegistry((ep) => {
+    const newCount = (proxyCounter.get(ep) || 0) - 1;
+    proxyCounter.set(ep, newCount);
+    if (newCount === 0) {
+      releaseEndpoint(ep);
+    }
+  });
+  function registerProxy(proxy2, ep) {
+    const newCount = (proxyCounter.get(ep) || 0) + 1;
+    proxyCounter.set(ep, newCount);
+    if (proxyFinalizers) {
+      proxyFinalizers.register(proxy2, ep, proxy2);
+    }
+  }
+  function unregisterProxy(proxy2) {
+    if (proxyFinalizers) {
+      proxyFinalizers.unregister(proxy2);
+    }
+  }
+  function createProxy(ep, pendingListeners, path = [], target = function() {
+  }) {
+    let isProxyReleased = false;
+    const proxy2 = new Proxy(target, {
+      get(_target, prop) {
+        throwIfProxyReleased(isProxyReleased);
+        if (prop === releaseProxy) {
+          return () => {
+            unregisterProxy(proxy2);
+            releaseEndpoint(ep);
+            pendingListeners.clear();
+            isProxyReleased = true;
+          };
+        }
+        if (prop === "then") {
+          if (path.length === 0) {
+            return { then: () => proxy2 };
+          }
+          const r = requestResponseMessage(ep, pendingListeners, {
+            type: "GET",
+            path: path.map((p) => p.toString())
+          }).then(fromWireValue);
+          return r.then.bind(r);
+        }
+        return createProxy(ep, pendingListeners, [...path, prop]);
+      },
+      set(_target, prop, rawValue) {
+        throwIfProxyReleased(isProxyReleased);
+        const [value, transferables] = toWireValue(rawValue);
+        return requestResponseMessage(ep, pendingListeners, {
+          type: "SET",
+          path: [...path, prop].map((p) => p.toString()),
+          value
+        }, transferables).then(fromWireValue);
+      },
+      apply(_target, _thisArg, rawArgumentList) {
+        throwIfProxyReleased(isProxyReleased);
+        const last = path[path.length - 1];
+        if (last === createEndpoint) {
+          return requestResponseMessage(ep, pendingListeners, {
+            type: "ENDPOINT"
+          }).then(fromWireValue);
+        }
+        if (last === "bind") {
+          return createProxy(ep, pendingListeners, path.slice(0, -1));
+        }
+        const [argumentList, transferables] = processArguments(rawArgumentList);
+        return requestResponseMessage(ep, pendingListeners, {
+          type: "APPLY",
+          path: path.map((p) => p.toString()),
+          argumentList
+        }, transferables).then(fromWireValue);
+      },
+      construct(_target, rawArgumentList) {
+        throwIfProxyReleased(isProxyReleased);
+        const [argumentList, transferables] = processArguments(rawArgumentList);
+        return requestResponseMessage(ep, pendingListeners, {
+          type: "CONSTRUCT",
+          path: path.map((p) => p.toString()),
+          argumentList
+        }, transferables).then(fromWireValue);
+      }
+    });
+    registerProxy(proxy2, ep);
+    return proxy2;
+  }
+  function myFlat(arr) {
+    return Array.prototype.concat.apply([], arr);
+  }
+  function processArguments(argumentList) {
+    const processed = argumentList.map(toWireValue);
+    return [processed.map((v) => v[0]), myFlat(processed.map((v) => v[1]))];
+  }
+  var transferCache = /* @__PURE__ */ new WeakMap();
+  function transfer(obj, transfers) {
+    transferCache.set(obj, transfers);
+    return obj;
+  }
+  function proxy(obj) {
+    return Object.assign(obj, { [proxyMarker]: true });
+  }
+  function toWireValue(value) {
+    for (const [name, handler] of transferHandlers) {
+      if (handler.canHandle(value)) {
+        const [serializedValue, transferables] = handler.serialize(value);
+        return [
+          {
+            type: "HANDLER",
+            name,
+            value: serializedValue
+          },
+          transferables
+        ];
+      }
+    }
+    return [
+      {
+        type: "RAW",
+        value
+      },
+      transferCache.get(value) || []
+    ];
+  }
+  function fromWireValue(value) {
+    switch (value.type) {
+      case "HANDLER":
+        return transferHandlers.get(value.name).deserialize(value.value);
+      case "RAW":
+        return value.value;
+    }
+  }
+  function requestResponseMessage(ep, pendingListeners, msg, transfers) {
+    return new Promise((resolve) => {
+      const id = generateUUID();
+      pendingListeners.set(id, resolve);
+      if (ep.start) {
+        ep.start();
+      }
+      ep.postMessage(Object.assign({ id }, msg), transfers);
+    });
+  }
+  function generateUUID() {
+    return new Array(4).fill(0).map(() => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(16)).join("-");
+  }
+
+  // src/engine/lzx.js
+  var LZX_MIN_MATCH = 2;
+  var LZX_NUM_CHARS = 256;
+  var LZX_BLOCKTYPE_VERBATIM = 1;
+  var LZX_BLOCKTYPE_ALIGNED = 2;
+  var LZX_BLOCKTYPE_UNCOMPRESSED = 3;
+  var LZX_PRETREE_NUM_ELEMENTS = 20;
+  var LZX_ALIGNED_NUM_ELEMENTS = 8;
+  var LZX_NUM_PRIMARY_LENGTHS = 7;
+  var LZX_NUM_SECONDARY_LENGTHS = 249;
+  var LZX_PRETREE_MAXSYMBOLS = LZX_PRETREE_NUM_ELEMENTS;
+  var LZX_PRETREE_TABLEBITS = 6;
+  var LZX_MAINTREE_MAXSYMBOLS = LZX_NUM_CHARS + 50 * 8;
+  var LZX_MAINTREE_TABLEBITS = 12;
+  var LZX_LENGTH_MAXSYMBOLS = LZX_NUM_SECONDARY_LENGTHS + 1;
+  var LZX_LENGTH_TABLEBITS = 12;
+  var LZX_ALIGNED_MAXSYMBOLS = LZX_ALIGNED_NUM_ELEMENTS;
+  var LZX_ALIGNED_TABLEBITS = 7;
+  var LZX_LENTABLE_SAFETY = 64;
+  var EXTRA_BITS = new Uint8Array([
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    2,
+    2,
+    3,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6,
+    6,
+    7,
+    7,
+    8,
+    8,
+    9,
+    9,
+    10,
+    10,
+    11,
+    11,
+    12,
+    12,
+    13,
+    13,
+    14,
+    14,
+    15,
+    15,
+    16,
+    16,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17
+  ]);
+  var POSITION_BASE = new Uint32Array([
+    0,
+    1,
+    2,
+    3,
+    4,
+    6,
+    8,
+    12,
+    16,
+    24,
+    32,
+    48,
+    64,
+    96,
+    128,
+    192,
+    256,
+    384,
+    512,
+    768,
+    1024,
+    1536,
+    2048,
+    3072,
+    4096,
+    6144,
+    8192,
+    12288,
+    16384,
+    24576,
+    32768,
+    49152,
+    65536,
+    98304,
+    131072,
+    196608,
+    262144,
+    393216,
+    524288,
+    655360,
+    786432,
+    917504,
+    1048576,
+    1179648,
+    1310720,
+    1441792,
+    1572864,
+    1703936,
+    1835008,
+    1966080,
+    2097152
+  ]);
+  var LzxError = class extends Error {
+    constructor(message) {
+      super(message);
+      this.name = "LzxError";
+    }
+  };
+  function makeDecodeTable(nsyms, nbits, length, table) {
+    let bitNum = 1;
+    let pos = 0;
+    let tableMask = 1 << nbits;
+    let bitMask = tableMask >>> 1;
+    let nextSymbol = bitMask;
+    while (bitNum <= nbits) {
+      for (let sym = 0; sym < nsyms; sym++) {
+        if (length[sym] === bitNum) {
+          let leaf = pos;
+          if ((pos += bitMask) > tableMask) return false;
+          let fill = bitMask;
+          while (fill-- > 0) table[leaf++] = sym;
+        }
+      }
+      bitMask >>>= 1;
+      bitNum++;
+    }
+    if (pos !== tableMask) {
+      for (let sym = pos; sym < tableMask; sym++) table[sym] = 0;
+      pos <<= 16;
+      tableMask <<= 16;
+      bitMask = 1 << 15;
+      while (bitNum <= 16) {
+        for (let sym = 0; sym < nsyms; sym++) {
+          if (length[sym] === bitNum) {
+            let leaf = pos >>> 16;
+            for (let fill = 0; fill < bitNum - nbits; fill++) {
+              if (table[leaf] === 0) {
+                table[nextSymbol << 1] = 0;
+                table[(nextSymbol << 1) + 1] = 0;
+                table[leaf] = nextSymbol++;
+              }
+              leaf = table[leaf] << 1;
+              if (pos >>> 15 - fill & 1) leaf++;
+            }
+            table[leaf] = sym;
+            if ((pos += bitMask) > tableMask) return false;
+          }
+        }
+        bitMask >>>= 1;
+        bitNum++;
+      }
+    }
+    if (pos === tableMask) return true;
+    for (let sym = 0; sym < nsyms; sym++) if (length[sym]) return false;
+    return true;
+  }
+  var LzxState = class {
+    /**
+     * @param {number} windowBits LZX window size in bits (15..21)
+     */
+    constructor(windowBits) {
+      if (windowBits < 15 || windowBits > 21) {
+        throw new LzxError(\`unsupported LZX window size: 2^\${windowBits}\`);
+      }
+      const wndSize = 1 << windowBits;
+      this.window = new Uint8Array(wndSize);
+      this.windowSize = wndSize;
+      this.windowPosn = 0;
+      let posnSlots;
+      if (windowBits === 20) posnSlots = 42;
+      else if (windowBits === 21) posnSlots = 50;
+      else posnSlots = windowBits << 1;
+      this.R0 = 1;
+      this.R1 = 1;
+      this.R2 = 1;
+      this.mainElements = LZX_NUM_CHARS + (posnSlots << 3);
+      this.headerRead = false;
+      this.framesRead = 0;
+      this.blockType = 0;
+      this.blockLength = 0;
+      this.blockRemaining = 0;
+      this.intelFilesize = 0;
+      this.intelCurpos = 0;
+      this.intelStarted = false;
+      this.PRETREE_table = new Uint16Array((1 << LZX_PRETREE_TABLEBITS) + (LZX_PRETREE_MAXSYMBOLS << 1));
+      this.PRETREE_len = new Uint8Array(LZX_PRETREE_MAXSYMBOLS + LZX_LENTABLE_SAFETY);
+      this.MAINTREE_table = new Uint16Array((1 << LZX_MAINTREE_TABLEBITS) + (LZX_MAINTREE_MAXSYMBOLS << 1));
+      this.MAINTREE_len = new Uint8Array(LZX_MAINTREE_MAXSYMBOLS + LZX_LENTABLE_SAFETY);
+      this.LENGTH_table = new Uint16Array((1 << LZX_LENGTH_TABLEBITS) + (LZX_LENGTH_MAXSYMBOLS << 1));
+      this.LENGTH_len = new Uint8Array(LZX_LENGTH_MAXSYMBOLS + LZX_LENTABLE_SAFETY);
+      this.ALIGNED_table = new Uint16Array((1 << LZX_ALIGNED_TABLEBITS) + (LZX_ALIGNED_MAXSYMBOLS << 1));
+      this.ALIGNED_len = new Uint8Array(LZX_ALIGNED_MAXSYMBOLS + LZX_LENTABLE_SAFETY);
+    }
+    reset() {
+      this.R0 = 1;
+      this.R1 = 1;
+      this.R2 = 1;
+      this.headerRead = false;
+      this.framesRead = 0;
+      this.blockType = 0;
+      this.blockRemaining = 0;
+      this.intelCurpos = 0;
+      this.intelStarted = false;
+      this.windowPosn = 0;
+      this.MAINTREE_len.fill(0);
+      this.LENGTH_len.fill(0);
+    }
+    /**
+     * Decompress one chunk of LZX data.
+     * @param {Uint8Array} input compressed bytes for this block
+     * @param {number} outLen number of uncompressed bytes to produce
+     * @returns {Uint8Array} freshly allocated buffer with outLen bytes
+     */
+    decompress(input, outLen) {
+      const state = this;
+      if (!this._inbuf || this._inbuf.length < input.length + 8) {
+        this._inbuf = new Uint8Array(input.length + 8);
+      }
+      const inbuf = this._inbuf;
+      inbuf.set(input);
+      inbuf.fill(0, input.length, input.length + 8);
+      const endinp = input.length;
+      const window = state.window;
+      const windowSize = state.windowSize;
+      let windowPosn = state.windowPosn;
+      let R0 = state.R0;
+      let R1 = state.R1;
+      let R2 = state.R2;
+      let inpos = 0;
+      let bitbuf = 0;
+      let bitsleft = 0;
+      const ensureBits = (n) => {
+        while (bitsleft < n) {
+          bitbuf = (bitbuf | (inbuf[inpos + 1] << 8 | inbuf[inpos]) << 16 - bitsleft) >>> 0;
+          bitsleft += 16;
+          inpos += 2;
+        }
+      };
+      const removeBits = (n) => {
+        bitbuf = bitbuf << n >>> 0;
+        bitsleft -= n;
+      };
+      const readBits = (n) => {
+        if (n === 0) return 0;
+        ensureBits(n);
+        const v = bitbuf >>> 32 - n;
+        removeBits(n);
+        return v;
+      };
+      const readHuffSym = (table, lens, tablebits, maxsymbols) => {
+        ensureBits(16);
+        let i = table[bitbuf >>> 32 - tablebits];
+        if (i >= maxsymbols) {
+          let j = 1 << 32 - tablebits;
+          do {
+            j >>>= 1;
+            i <<= 1;
+            i |= bitbuf & j ? 1 : 0;
+            if (!j) throw new LzxError("corrupt huffman stream");
+            i = table[i];
+          } while (i >= maxsymbols);
+        }
+        removeBits(lens[i]);
+        return i;
+      };
+      const buildTable = (nsyms, nbits, lens, table, name) => {
+        if (!makeDecodeTable(nsyms, nbits, lens, table)) {
+          throw new LzxError(\`failed to build \${name} huffman table\`);
+        }
+      };
+      const readLengths = (lens, first, last) => {
+        for (let x = 0; x < 20; x++) {
+          state.PRETREE_len[x] = readBits(4);
+        }
+        buildTable(LZX_PRETREE_MAXSYMBOLS, LZX_PRETREE_TABLEBITS, state.PRETREE_len, state.PRETREE_table, "PRETREE");
+        for (let x = first; x < last; ) {
+          let z = readHuffSym(state.PRETREE_table, state.PRETREE_len, LZX_PRETREE_TABLEBITS, LZX_PRETREE_MAXSYMBOLS);
+          if (z === 17) {
+            let y = readBits(4) + 4;
+            while (y--) lens[x++] = 0;
+          } else if (z === 18) {
+            let y = readBits(5) + 20;
+            while (y--) lens[x++] = 0;
+          } else if (z === 19) {
+            let y = readBits(1) + 4;
+            z = readHuffSym(state.PRETREE_table, state.PRETREE_len, LZX_PRETREE_TABLEBITS, LZX_PRETREE_MAXSYMBOLS);
+            z = lens[x] - z;
+            if (z < 0) z += 17;
+            while (y--) lens[x++] = z;
+          } else {
+            z = lens[x] - z;
+            if (z < 0) z += 17;
+            lens[x++] = z;
+          }
+        }
+      };
+      let togo = outLen;
+      if (!state.headerRead) {
+        let i = 0, j = 0;
+        const k = readBits(1);
+        if (k) {
+          i = readBits(16);
+          j = readBits(16);
+        }
+        state.intelFilesize = i << 16 | j | 0;
+        state.headerRead = true;
+      }
+      while (togo > 0) {
+        if (state.blockRemaining === 0) {
+          if (state.blockType === LZX_BLOCKTYPE_UNCOMPRESSED) {
+            if (state.blockLength & 1) inpos++;
+            bitbuf = 0;
+            bitsleft = 0;
+          }
+          state.blockType = readBits(3);
+          const hi = readBits(16);
+          const lo = readBits(8);
+          state.blockRemaining = state.blockLength = (hi << 8 | lo) >>> 0;
+          switch (state.blockType) {
+            case LZX_BLOCKTYPE_ALIGNED:
+              for (let i = 0; i < 8; i++) {
+                state.ALIGNED_len[i] = readBits(3);
+              }
+              buildTable(LZX_ALIGNED_MAXSYMBOLS, LZX_ALIGNED_TABLEBITS, state.ALIGNED_len, state.ALIGNED_table, "ALIGNED");
+            /* falls through: rest of aligned header is same as verbatim */
+            case LZX_BLOCKTYPE_VERBATIM:
+              readLengths(state.MAINTREE_len, 0, 256);
+              readLengths(state.MAINTREE_len, 256, state.mainElements);
+              buildTable(LZX_MAINTREE_MAXSYMBOLS, LZX_MAINTREE_TABLEBITS, state.MAINTREE_len, state.MAINTREE_table, "MAINTREE");
+              if (state.MAINTREE_len[232] !== 0) state.intelStarted = true;
+              readLengths(state.LENGTH_len, 0, LZX_NUM_SECONDARY_LENGTHS);
+              buildTable(LZX_LENGTH_MAXSYMBOLS, LZX_LENGTH_TABLEBITS, state.LENGTH_len, state.LENGTH_table, "LENGTH");
+              break;
+            case LZX_BLOCKTYPE_UNCOMPRESSED:
+              state.intelStarted = true;
+              ensureBits(16);
+              if (bitsleft > 16) inpos -= 2;
+              R0 = (inbuf[inpos] | inbuf[inpos + 1] << 8 | inbuf[inpos + 2] << 16 | inbuf[inpos + 3] << 24) >>> 0;
+              inpos += 4;
+              R1 = (inbuf[inpos] | inbuf[inpos + 1] << 8 | inbuf[inpos + 2] << 16 | inbuf[inpos + 3] << 24) >>> 0;
+              inpos += 4;
+              R2 = (inbuf[inpos] | inbuf[inpos + 1] << 8 | inbuf[inpos + 2] << 16 | inbuf[inpos + 3] << 24) >>> 0;
+              inpos += 4;
+              break;
+            default:
+              throw new LzxError(\`illegal LZX block type \${state.blockType}\`);
+          }
+        }
+        if (inpos > endinp) {
+          if (inpos > endinp + 2 || bitsleft < 16) {
+            throw new LzxError("input buffer exhausted");
+          }
+        }
+        let thisRun;
+        while ((thisRun = state.blockRemaining) > 0 && togo > 0) {
+          if (thisRun > togo) thisRun = togo;
+          togo -= thisRun;
+          state.blockRemaining -= thisRun;
+          windowPosn &= windowSize - 1;
+          if (windowPosn + thisRun > windowSize) {
+            throw new LzxError("run straddles window wraparound");
+          }
+          switch (state.blockType) {
+            case LZX_BLOCKTYPE_VERBATIM:
+            case LZX_BLOCKTYPE_ALIGNED: {
+              const aligned = state.blockType === LZX_BLOCKTYPE_ALIGNED;
+              while (thisRun > 0) {
+                let mainElement = readHuffSym(state.MAINTREE_table, state.MAINTREE_len, LZX_MAINTREE_TABLEBITS, LZX_MAINTREE_MAXSYMBOLS);
+                if (mainElement < LZX_NUM_CHARS) {
+                  window[windowPosn++] = mainElement;
+                  thisRun--;
+                  continue;
+                }
+                mainElement -= LZX_NUM_CHARS;
+                let matchLength = mainElement & LZX_NUM_PRIMARY_LENGTHS;
+                if (matchLength === LZX_NUM_PRIMARY_LENGTHS) {
+                  const lengthFooter = readHuffSym(state.LENGTH_table, state.LENGTH_len, LZX_LENGTH_TABLEBITS, LZX_LENGTH_MAXSYMBOLS);
+                  matchLength += lengthFooter;
+                }
+                matchLength += LZX_MIN_MATCH;
+                let matchOffset = mainElement >>> 3;
+                if (matchOffset > 2) {
+                  if (aligned) {
+                    const extra = EXTRA_BITS[matchOffset];
+                    matchOffset = POSITION_BASE[matchOffset] - 2;
+                    if (extra > 3) {
+                      const verbatimBits = readBits(extra - 3);
+                      matchOffset += verbatimBits << 3;
+                      const alignedBits = readHuffSym(state.ALIGNED_table, state.ALIGNED_len, LZX_ALIGNED_TABLEBITS, LZX_ALIGNED_MAXSYMBOLS);
+                      matchOffset += alignedBits;
+                    } else if (extra === 3) {
+                      const alignedBits = readHuffSym(state.ALIGNED_table, state.ALIGNED_len, LZX_ALIGNED_TABLEBITS, LZX_ALIGNED_MAXSYMBOLS);
+                      matchOffset += alignedBits;
+                    } else if (extra > 0) {
+                      matchOffset += readBits(extra);
+                    } else {
+                      matchOffset = 1;
+                    }
+                  } else {
+                    if (matchOffset !== 3) {
+                      const extra = EXTRA_BITS[matchOffset];
+                      const verbatimBits = readBits(extra);
+                      matchOffset = POSITION_BASE[matchOffset] - 2 + verbatimBits;
+                    } else {
+                      matchOffset = 1;
+                    }
+                  }
+                  R2 = R1;
+                  R1 = R0;
+                  R0 = matchOffset;
+                } else if (matchOffset === 0) {
+                  matchOffset = R0;
+                } else if (matchOffset === 1) {
+                  matchOffset = R1;
+                  R1 = R0;
+                  R0 = matchOffset;
+                } else {
+                  matchOffset = R2;
+                  R2 = R0;
+                  R0 = matchOffset;
+                }
+                let rundest = windowPosn;
+                let runsrc = rundest - matchOffset;
+                windowPosn += matchLength;
+                if (windowPosn > windowSize) throw new LzxError("match overruns window");
+                thisRun -= matchLength;
+                while (runsrc < 0 && matchLength-- > 0) {
+                  window[rundest++] = window[runsrc + windowSize];
+                  runsrc++;
+                }
+                if (matchLength > 0) {
+                  if (rundest - runsrc >= matchLength && matchLength > 12) {
+                    window.copyWithin(rundest, runsrc, runsrc + matchLength);
+                  } else {
+                    while (matchLength-- > 0) window[rundest++] = window[runsrc++];
+                  }
+                }
+              }
+              break;
+            }
+            case LZX_BLOCKTYPE_UNCOMPRESSED: {
+              if (inpos + thisRun > endinp) throw new LzxError("input overrun in stored block");
+              window.set(inbuf.subarray(inpos, inpos + thisRun), windowPosn);
+              inpos += thisRun;
+              windowPosn += thisRun;
+              break;
+            }
+            default:
+              throw new LzxError("illegal LZX block type");
+          }
+        }
+      }
+      if (togo !== 0) throw new LzxError("should never happen: bytes left to decode");
+      const outStart = (windowPosn === 0 ? windowSize : windowPosn) - outLen;
+      const output = window.slice(outStart, outStart + outLen);
+      state.windowPosn = windowPosn;
+      state.R0 = R0;
+      state.R1 = R1;
+      state.R2 = R2;
+      if (state.framesRead++ < 32768 && state.intelFilesize !== 0) {
+        if (outLen <= 6 || !state.intelStarted) {
+          state.intelCurpos += outLen;
+        } else {
+          const data = output;
+          const dataend = outLen - 10;
+          let curpos = state.intelCurpos;
+          const filesize = state.intelFilesize;
+          state.intelCurpos = curpos + outLen;
+          let pos = 0;
+          while (pos < dataend) {
+            if (data[pos++] !== 232) {
+              curpos++;
+              continue;
+            }
+            const absOff = data[pos] | data[pos + 1] << 8 | data[pos + 2] << 16 | data[pos + 3] << 24 | 0;
+            if (absOff >= -curpos && absOff < filesize) {
+              const relOff = absOff >= 0 ? absOff - curpos : absOff + filesize;
+              data[pos] = relOff & 255;
+              data[pos + 1] = relOff >> 8 & 255;
+              data[pos + 2] = relOff >> 16 & 255;
+              data[pos + 3] = relOff >> 24 & 255;
+            }
+            pos += 4;
+            curpos += 5;
+          }
+        }
+      }
+      return output;
+    }
+  };
+
+  // src/engine/chm.js
+  var ITSF_V2_LEN = 88;
+  var ITSF_V3_LEN = 96;
+  var ITSP_V1_LEN = 84;
+  var PMGL_LEN = 20;
+  var RESET_TABLE_LEN = 40;
+  var CHM_UNCOMPRESSED = 0;
+  var CHM_COMPRESSED = 1;
+  var UNIT_RESET_TABLE = "::DataSpace/Storage/MSCompressed/Transform/{7FC28940-9D31-11D0-9B27-00A0C91E9C7C}/InstanceData/ResetTable";
+  var UNIT_CONTENT = "::DataSpace/Storage/MSCompressed/Content";
+  var UNIT_LZXC_CONTROLDATA = "::DataSpace/Storage/MSCompressed/ControlData";
+  var ChmError = class extends Error {
+    constructor(message) {
+      super(message);
+      this.name = "ChmError";
+    }
+  };
+  function u32(buf, off) {
+    return (buf[off] | buf[off + 1] << 8 | buf[off + 2] << 16 | buf[off + 3] << 24) >>> 0;
+  }
+  function i32(buf, off) {
+    return buf[off] | buf[off + 1] << 8 | buf[off + 2] << 16 | buf[off + 3] << 24 | 0;
+  }
+  function u64(buf, off) {
+    const lo = u32(buf, off);
+    const hi = u32(buf, off + 4);
+    return hi * 4294967296 + lo;
+  }
+  function u16(buf, off) {
+    return buf[off] | buf[off + 1] << 8;
+  }
+  function parseCword(buf, posRef) {
+    let accum = 0;
+    let temp;
+    while ((temp = buf[posRef.pos++]) >= 128) {
+      accum = accum * 128 + (temp & 127);
+    }
+    return accum * 128 + temp;
+  }
+  var utf8Decoder = typeof TextDecoder !== "undefined" ? new TextDecoder("utf-8") : null;
+  function decodeUtf8(bytes) {
+    if (utf8Decoder) return utf8Decoder.decode(bytes);
+    let s = "";
+    for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return s;
+  }
+  var LruBlockCache = class {
+    constructor(maxBlocks) {
+      this.max = maxBlocks;
+      this.map = /* @__PURE__ */ new Map();
+    }
+    get(key) {
+      const v = this.map.get(key);
+      if (v !== void 0) {
+        this.map.delete(key);
+        this.map.set(key, v);
+      }
+      return v;
+    }
+    set(key, value) {
+      if (this.map.has(key)) this.map.delete(key);
+      this.map.set(key, value);
+      while (this.map.size > this.max) {
+        const oldest = this.map.keys().next().value;
+        this.map.delete(oldest);
+      }
+    }
+    clear() {
+      this.map.clear();
+    }
+  };
+  var ChmFile = class _ChmFile {
+    constructor(reader) {
+      this.reader = reader;
+      this.dirOffset = 0;
+      this.dirLen = 0;
+      this.dataOffset = 0;
+      this.blockLen = 0;
+      this.numBlocks = 0;
+      this.langId = 0;
+      this.timestamp = 0;
+      this.entries = [];
+      this.entryMap = /* @__PURE__ */ new Map();
+      this.compressionEnabled = false;
+      this.windowSize = 0;
+      this.resetInterval = 0;
+      this.resetBlkCount = 1;
+      this.resetTable = null;
+      this.resetOffsets = null;
+      this.contentStart = 0;
+      this.contentCmpLen = 0;
+      this.lzx = null;
+      this.lzxWindowBits = 0;
+      this.lzxLastBlock = -1;
+      this.blockCache = new LruBlockCache(64);
+    }
+    /**
+     * Parse the container directory of a CHM file.
+     * @param {{size: number, read: (off: number, len: number) => Uint8Array}} reader
+     */
+    static open(reader) {
+      const chm = new _ChmFile(reader);
+      chm._parseHeaders();
+      chm._enumerate();
+      chm._initCompression();
+      return chm;
+    }
+    _read(offset, length) {
+      const buf = this.reader.read(offset, length);
+      if (!buf || buf.length !== length) {
+        throw new ChmError(\`short read at \${offset} (+\${length})\`);
+      }
+      return buf;
+    }
+    _parseHeaders() {
+      if (this.reader.size < ITSF_V2_LEN) throw new ChmError("file too small to be a CHM");
+      const head = this._read(0, Math.min(ITSF_V3_LEN, this.reader.size));
+      if (!(head[0] === 73 && head[1] === 84 && head[2] === 83 && head[3] === 70)) {
+        throw new ChmError("not a CHM file (missing ITSF signature)");
+      }
+      const version = i32(head, 4);
+      const headerLen = i32(head, 8);
+      this.timestamp = u32(head, 16);
+      this.langId = u32(head, 20);
+      const dirOffset = u64(head, 72);
+      const dirLen = u64(head, 80);
+      if (version === 2) {
+        if (headerLen < ITSF_V2_LEN) throw new ChmError("bad ITSF v2 header length");
+        this.dataOffset = dirOffset + dirLen;
+      } else if (version === 3) {
+        if (headerLen < ITSF_V3_LEN || head.length < ITSF_V3_LEN) {
+          throw new ChmError("bad ITSF v3 header length");
+        }
+        this.dataOffset = u64(head, 88);
+      } else {
+        throw new ChmError(\`unsupported ITSF version \${version}\`);
+      }
+      const itsp = this._read(dirOffset, ITSP_V1_LEN);
+      if (!(itsp[0] === 73 && itsp[1] === 84 && itsp[2] === 83 && itsp[3] === 80)) {
+        throw new ChmError("missing ITSP signature");
+      }
+      if (i32(itsp, 4) !== 1) throw new ChmError("unsupported ITSP version");
+      const itspHeaderLen = i32(itsp, 8);
+      this.dirOffset = dirOffset + itspHeaderLen;
+      this.dirLen = dirLen - itspHeaderLen;
+      this.blockLen = u32(itsp, 16);
+      if (this.blockLen === 0 || this.blockLen > 1 << 22) {
+        throw new ChmError("implausible directory chunk size");
+      }
+      this.numBlocks = Math.floor(this.dirLen / this.blockLen);
+    }
+    /* walk every PMGL (leaf) directory chunk and collect all entries */
+    _enumerate() {
+      const blockLen = this.blockLen;
+      for (let i = 0; i < this.numBlocks; i++) {
+        const chunk = this._read(this.dirOffset + i * blockLen, blockLen);
+        if (!(chunk[0] === 80 && chunk[1] === 77 && chunk[2] === 71 && chunk[3] === 76)) {
+          continue;
+        }
+        const freeSpace = u32(chunk, 4);
+        const end = blockLen - freeSpace;
+        const ref = { pos: PMGL_LEN };
+        while (ref.pos < end) {
+          const strLen = parseCword(chunk, ref);
+          if (strLen <= 0 || strLen > 4096 || ref.pos + strLen > blockLen) break;
+          const path = decodeUtf8(chunk.subarray(ref.pos, ref.pos + strLen));
+          ref.pos += strLen;
+          const space = parseCword(chunk, ref);
+          const start = parseCword(chunk, ref);
+          const length = parseCword(chunk, ref);
+          const entry = { path, space, start, length };
+          this.entries.push(entry);
+          this.entryMap.set(path.toLowerCase(), entry);
+        }
+      }
+      if (this.entries.length === 0) {
+        throw new ChmError("CHM directory contains no entries");
+      }
+    }
+    _initCompression() {
+      const rt = this.resolve(UNIT_RESET_TABLE);
+      const cn = this.resolve(UNIT_CONTENT);
+      const cd = this.resolve(UNIT_LZXC_CONTROLDATA);
+      if (!rt || !cn || !cd || rt.space !== CHM_UNCOMPRESSED || cn.space !== CHM_UNCOMPRESSED || cd.space !== CHM_UNCOMPRESSED) {
+        this.compressionEnabled = false;
+        return;
+      }
+      const rtData = this._readUncompressed(rt, 0, rt.length);
+      if (rtData.length < RESET_TABLE_LEN || u32(rtData, 0) !== 2) {
+        this.compressionEnabled = false;
+        return;
+      }
+      const blockCount = u32(rtData, 4);
+      const tableOffset = u32(rtData, 12);
+      const uncompressedLen = u64(rtData, 16);
+      const compressedLen = u64(rtData, 24);
+      const blockLen = u64(rtData, 32);
+      if (blockLen === 0 || blockCount === 0) {
+        this.compressionEnabled = false;
+        return;
+      }
+      const offsets = new Float64Array(blockCount);
+      for (let i = 0; i < blockCount; i++) {
+        const off = tableOffset + i * 8;
+        if (off + 8 > rtData.length) {
+          this.compressionEnabled = false;
+          return;
+        }
+        offsets[i] = u64(rtData, off);
+      }
+      const cdData = this._readUncompressed(cd, 0, cd.length);
+      if (cdData.length < 24) {
+        this.compressionEnabled = false;
+        return;
+      }
+      if (!(cdData[4] === 76 && cdData[5] === 90 && cdData[6] === 88 && cdData[7] === 67)) {
+        this.compressionEnabled = false;
+        return;
+      }
+      const version = u32(cdData, 8);
+      let resetInterval = u32(cdData, 12);
+      let windowSize = u32(cdData, 16);
+      const windowsPerReset = u32(cdData, 20);
+      if (version === 2) {
+        resetInterval *= 32768;
+        windowSize *= 32768;
+      }
+      if (windowSize === 0 || resetInterval === 0 || windowSize === 1 || resetInterval % (windowSize / 2) !== 0) {
+        this.compressionEnabled = false;
+        return;
+      }
+      this.resetTable = { blockCount, uncompressedLen, compressedLen, blockLen };
+      this.resetOffsets = offsets;
+      this.windowSize = windowSize;
+      this.resetInterval = resetInterval;
+      this.resetBlkCount = resetInterval / (windowSize / 2) * (windowsPerReset || 1);
+      this.contentStart = this.dataOffset + cn.start;
+      this.contentCmpLen = cn.length;
+      this.lzxWindowBits = Math.round(Math.log2(windowSize));
+      this.compressionEnabled = true;
+    }
+    /* ---------------------------------------------------------------- */
+    /**
+     * Look up an entry by its internal path (case-insensitive).
+     * @returns {ChmEntry | null}
+     */
+    resolve(path) {
+      if (!path) return null;
+      return this.entryMap.get(path.toLowerCase()) || null;
+    }
+    _readUncompressed(entry, offset, length) {
+      return this._read(this.dataOffset + entry.start + offset, length);
+    }
+    /* bounds of a compressed block inside the file */
+    _cmpBlockBounds(block) {
+      const rt = this.resetTable;
+      const start = this.resetOffsets[block];
+      const end = block < rt.blockCount - 1 ? this.resetOffsets[block + 1] : rt.compressedLen;
+      return { start: this.contentStart + start, len: end - start };
+    }
+    _uncompressedBlockLen(block) {
+      const rt = this.resetTable;
+      if (block === rt.blockCount - 1) {
+        const rem = rt.uncompressedLen - block * rt.blockLen;
+        return Math.max(0, Math.min(rt.blockLen, rem));
+      }
+      return rt.blockLen;
+    }
+    /**
+     * Return the decompressed bytes of LZX block \`block\`, decoding any
+     * predecessors since the last reset point as needed to rebuild the
+     * sliding-window state.
+     * @returns {Uint8Array}
+     */
+    _getBlock(block) {
+      const cached = this.blockCache.get(block);
+      if (cached) return cached;
+      if (!this.lzx) {
+        this.lzx = new LzxState(this.lzxWindowBits);
+        this.lzxLastBlock = -1;
+      }
+      const groupStart = block - block % this.resetBlkCount;
+      let from;
+      if (this.lzxLastBlock >= groupStart && this.lzxLastBlock < block) {
+        from = this.lzxLastBlock + 1;
+      } else {
+        from = groupStart;
+      }
+      let result = null;
+      for (let i = from; i <= block; i++) {
+        if (i % this.resetBlkCount === 0) this.lzx.reset();
+        const { start, len } = this._cmpBlockBounds(i);
+        if (len < 0 || len > this.resetTable.blockLen + 6144) {
+          throw new ChmError(\`implausible compressed block \${i}\`);
+        }
+        const cdata = this._read(start, len);
+        let udata;
+        try {
+          udata = this.lzx.decompress(cdata, this._uncompressedBlockLen(i));
+        } catch (err) {
+          if (err instanceof LzxError) {
+            throw new ChmError(\`LZX decompression failed in block \${i}: \${err.message}\`);
+          }
+          throw err;
+        }
+        this.lzxLastBlock = i;
+        this.blockCache.set(i, udata);
+        if (i === block) result = udata;
+      }
+      return result;
+    }
+    _readCompressed(entry, offset, length) {
+      const rt = this.resetTable;
+      if (!this.compressionEnabled || !rt) {
+        throw new ChmError("archive has no working compressed section");
+      }
+      const out = new Uint8Array(length);
+      let produced = 0;
+      let pos = entry.start + offset;
+      while (produced < length) {
+        const block = Math.floor(pos / rt.blockLen);
+        const blockOff = pos % rt.blockLen;
+        if (block >= rt.blockCount) break;
+        const data = this._getBlock(block);
+        const n = Math.min(length - produced, data.length - blockOff);
+        if (n <= 0) break;
+        out.set(data.subarray(blockOff, blockOff + n), produced);
+        produced += n;
+        pos += n;
+      }
+      if (produced !== length) {
+        throw new ChmError(\`short object read (\${produced}/\${length})\`);
+      }
+      return out;
+    }
+    /**
+     * Retrieve (part of) an object's contents.
+     * @param {ChmEntry} entry
+     * @param {number} [offset]
+     * @param {number} [length]
+     * @returns {Uint8Array}
+     */
+    retrieve(entry, offset = 0, length = entry.length - offset) {
+      if (!entry) throw new ChmError("no entry");
+      if (offset < 0 || length < 0 || offset + length > entry.length) {
+        throw new ChmError("read out of object bounds");
+      }
+      if (length === 0) return new Uint8Array(0);
+      return entry.space === CHM_COMPRESSED ? this._readCompressed(entry, offset, length) : this._readUncompressed(entry, offset, length);
+    }
+    /** Retrieve the full contents of an object by path. */
+    readPath(path) {
+      const entry = this.resolve(path);
+      if (!entry) return null;
+      return this.retrieve(entry);
+    }
+    /**
+     * Parse the #SYSTEM meta file.
+     * @returns {Map<number, Uint8Array>} entry code -> raw bytes (first wins)
+     */
+    parseSystem() {
+      const map = /* @__PURE__ */ new Map();
+      const entry = this.resolve("/#SYSTEM");
+      if (!entry || entry.length < 4) return map;
+      let data;
+      try {
+        data = this.retrieve(entry);
+      } catch {
+        return map;
+      }
+      let pos = 4;
+      while (pos + 4 <= data.length) {
+        const code = u16(data, pos);
+        const len = u16(data, pos + 2);
+        pos += 4;
+        if (pos + len > data.length) break;
+        if (!map.has(code)) map.set(code, data.slice(pos, pos + len));
+        pos += len;
+      }
+      return map;
+    }
+    /** Drop decompression caches (frees memory; further reads still work). */
+    dropCaches() {
+      this.blockCache.clear();
+      this.lzx = null;
+      this.lzxLastBlock = -1;
+    }
+  };
+
+  // src/engine/hhc.js
+  var NAMED_ENTITIES = {
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'",
+    nbsp: "\\xA0",
+    copy: "\\xA9",
+    reg: "\\xAE",
+    trade: "\\u2122",
+    hellip: "\\u2026",
+    mdash: "\\u2014",
+    ndash: "\\u2013",
+    lsquo: "\\u2018",
+    rsquo: "\\u2019",
+    ldquo: "\\u201C",
+    rdquo: "\\u201D",
+    middot: "\\xB7",
+    times: "\\xD7"
+  };
+  function decodeEntities(text) {
+    if (!text || text.indexOf("&") === -1) return text;
+    return text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/g, (m, body) => {
+      if (body[0] === "#") {
+        const cp = body[1] === "x" || body[1] === "X" ? parseInt(body.slice(2), 16) : parseInt(body.slice(1), 10);
+        if (Number.isFinite(cp) && cp >= 0 && cp <= 1114111) {
+          try {
+            return String.fromCodePoint(cp);
+          } catch {
+            return m;
+          }
+        }
+        return m;
+      }
+      return Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, body.toLowerCase()) ? NAMED_ENTITIES[body.toLowerCase()] : m;
+    });
+  }
+  function parseAttrs(tagBody) {
+    const attrs = {};
+    const re = /([a-zA-Z_][\\w:-]*)\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))/g;
+    let m;
+    while ((m = re.exec(tagBody)) !== null) {
+      attrs[m[1].toLowerCase()] = decodeEntities(m[3] ?? m[4] ?? m[5] ?? "");
+    }
+    return attrs;
+  }
+  function parseSitemap(text) {
+    const root = { name: "", local: null, children: [] };
+    const stack = [root];
+    let lastNode = null;
+    let collecting = null;
+    const tagRe = /<\\s*(\\/?)\\s*([a-zA-Z][a-zA-Z0-9]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/g;
+    let m;
+    while ((m = tagRe.exec(text)) !== null) {
+      const closing = m[1] === "/";
+      const tag = m[2].toLowerCase();
+      const body = m[3] || "";
+      if (tag === "ul" || tag === "menu" || tag === "dir") {
+        if (!closing) {
+          const parent = lastNode || stack[stack.length - 1];
+          stack.push(parent);
+          lastNode = null;
+        } else if (stack.length > 1) {
+          lastNode = stack.pop();
+        }
+      } else if (tag === "object") {
+        if (!closing) {
+          const attrs = parseAttrs(body);
+          collecting = /text\\/sitemap/i.test(attrs.type || "") ? { params: [] } : null;
+        } else if (collecting) {
+          const node = buildNode(collecting.params);
+          if (node) {
+            stack[stack.length - 1].children.push(node);
+            lastNode = node;
+          }
+          collecting = null;
+        }
+      } else if (tag === "param" && collecting && !closing) {
+        const attrs = parseAttrs(body);
+        if (attrs.name) collecting.params.push([attrs.name.toLowerCase(), attrs.value ?? ""]);
+      }
+    }
+    return root;
+  }
+  function buildNode(params) {
+    let name = null;
+    let local = null;
+    const locals = [];
+    for (const [key, value] of params) {
+      if (key === "name" && name === null) name = value;
+      else if (key === "local") {
+        if (local === null) local = value;
+        locals.push(value);
+      }
+    }
+    if (name === null && local === null) return null;
+    return {
+      name: (name || local || "").trim() || "(untitled)",
+      local: local || null,
+      locals,
+      children: []
+    };
+  }
+  function nodeFactory() {
+    let nextId = 0;
+    return (name, local = null, children = []) => ({ id: nextId++, name, local, children });
+  }
+  function flattenIndex(root) {
+    const out = [];
+    const walk = (node, prefix) => {
+      const label = prefix ? \`\${prefix}, \${node.name}\` : node.name;
+      if (node.local || node.locals && node.locals.length) {
+        const targets = (node.locals && node.locals.length ? node.locals : [node.local]).filter(Boolean).map((local) => ({ local }));
+        out.push({ name: label, targets });
+      }
+      for (const child of node.children) walk(child, label);
+    };
+    for (const child of root.children) walk(child, "");
+    out.sort((a, b) => a.name.localeCompare(b.name, void 0, { numeric: true, sensitivity: "base" }));
+    return out;
+  }
+
+  // src/engine/paths.js
+  function normalizePath(base, href) {
+    if (href == null) return null;
+    let path = String(href).replace(/\\\\/g, "/").trim();
+    const itsMatch = path.match(/^(?:ms-its:|mk:@msitstore:)?.*?\\.chm::(.*)$/i);
+    if (itsMatch) path = itsMatch[1];
+    const hash = path.indexOf("#");
+    if (hash >= 0) path = path.slice(0, hash);
+    const q = path.indexOf("?");
+    if (q >= 0) path = path.slice(0, q);
+    if (!path) return null;
+    try {
+      path = decodeURIComponent(path);
+    } catch {
+    }
+    if (!path.startsWith("/")) {
+      const dir = base ? base.slice(0, base.lastIndexOf("/") + 1) : "/";
+      path = dir + path;
+    }
+    const parts = [];
+    for (const part of path.split("/")) {
+      if (part === "" || part === ".") continue;
+      if (part === "..") parts.pop();
+      else parts.push(part);
+    }
+    return "/" + parts.join("/");
+  }
+  var MIME_TYPES = {
+    htm: "text/html",
+    html: "text/html",
+    xhtml: "application/xhtml+xml",
+    xht: "application/xhtml+xml",
+    css: "text/css",
+    js: "text/javascript",
+    mjs: "text/javascript",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    jpe: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    bmp: "image/bmp",
+    svg: "image/svg+xml",
+    webp: "image/webp",
+    ico: "image/x-icon",
+    wav: "audio/wav",
+    mp3: "audio/mpeg",
+    mid: "audio/midi",
+    midi: "audio/midi",
+    txt: "text/plain",
+    xml: "text/xml",
+    json: "application/json",
+    woff: "font/woff",
+    woff2: "font/woff2",
+    ttf: "font/ttf",
+    otf: "font/otf"
+  };
+  function mimeFor(path) {
+    const dot = path.lastIndexOf(".");
+    const ext = dot >= 0 ? path.slice(dot + 1).toLowerCase() : "";
+    return MIME_TYPES[ext] || "application/octet-stream";
+  }
+  function isHtmlPath(path) {
+    return /\\.(x?html?|xht)$/i.test(path);
+  }
+  function isTextPath(path) {
+    return /\\.txt$/i.test(path);
+  }
+  function isRenderablePath(path) {
+    return isHtmlPath(path) || isTextPath(path);
+  }
+
+  // src/engine/encodings.js
+  var LCID_CHARSETS = {
+    2052: "gbk",
+    4100: "gbk",
+    3076: "big5",
+    1028: "big5",
+    5124: "big5",
+    1041: "shift_jis",
+    1042: "euc-kr",
+    1049: "windows-1251",
+    1029: "windows-1250",
+    1038: "windows-1250",
+    1032: "windows-1253",
+    1055: "windows-1254",
+    1037: "windows-1255",
+    1025: "windows-1256",
+    1054: "windows-874"
+  };
+  var CHARSET_ALIASES = {
+    "gb2312": "gbk",
+    "gb_2312": "gbk",
+    "gb-2312": "gbk",
+    "csgb2312": "gbk",
+    "x-gbk": "gbk",
+    "gb18030": "gb18030",
+    "gbk": "gbk",
+    "hz-gb-2312": "gbk",
+    "big5": "big5",
+    "big-5": "big5",
+    "big5-hkscs": "big5",
+    "cn-big5": "big5",
+    "csbig5": "big5",
+    "x-x-big5": "big5",
+    "shift_jis": "shift_jis",
+    "shift-jis": "shift_jis",
+    "sjis": "shift_jis",
+    "x-sjis": "shift_jis",
+    "ms_kanji": "shift_jis",
+    "windows-31j": "shift_jis",
+    "cp932": "shift_jis",
+    "euc-jp": "euc-jp",
+    "x-euc-jp": "euc-jp",
+    "euc-kr": "euc-kr",
+    "ks_c_5601-1987": "euc-kr",
+    "ksc5601": "euc-kr",
+    "cp949": "euc-kr",
+    "utf-8": "utf-8",
+    "utf8": "utf-8",
+    "unicode": "utf-8",
+    "iso-8859-1": "windows-1252",
+    "latin1": "windows-1252",
+    "latin-1": "windows-1252",
+    "windows-1252": "windows-1252",
+    "cp1252": "windows-1252",
+    "us-ascii": "windows-1252",
+    "ascii": "windows-1252",
+    "windows-1251": "windows-1251",
+    "cp1251": "windows-1251",
+    "koi8-r": "koi8-r",
+    "windows-1250": "windows-1250",
+    "windows-1253": "windows-1253",
+    "windows-1254": "windows-1254",
+    "windows-1255": "windows-1255",
+    "windows-1256": "windows-1256",
+    "windows-874": "windows-874",
+    "tis-620": "windows-874"
+  };
+  function canonicalCharset(name) {
+    if (!name) return null;
+    return CHARSET_ALIASES[name.toLowerCase()] || null;
+  }
+  function sniffMetaCharset(bytes) {
+    const head = bytes.subarray(0, 2048);
+    let s = "";
+    for (let i = 0; i < head.length; i++) s += String.fromCharCode(head[i]);
+    const m = s.match(/charset\\s*=\\s*["']?\\s*([\\w][\\w.:-]*)/i);
+    return m ? m[1].toLowerCase() : null;
+  }
+  function looksLikeValidUtf8(bytes) {
+    const n = Math.min(bytes.length, 64 * 1024);
+    let i = 0;
+    let multibyte = false;
+    while (i < n) {
+      const b = bytes[i];
+      if (b < 128) {
+        i++;
+        continue;
+      }
+      let len;
+      if ((b & 224) === 192) len = 2;
+      else if ((b & 240) === 224) len = 3;
+      else if ((b & 248) === 240) len = 4;
+      else return false;
+      if (i + len > n) break;
+      for (let k = 1; k < len; k++) {
+        if ((bytes[i + k] & 192) !== 128) return false;
+      }
+      multibyte = true;
+      i += len;
+    }
+    return multibyte ? "multibyte" : "ascii";
+  }
+  function hasUtf8Bom(bytes) {
+    return bytes.length >= 3 && bytes[0] === 239 && bytes[1] === 187 && bytes[2] === 191;
+  }
+  function sniffEncoding(bytes) {
+    const meta = canonicalCharset(sniffMetaCharset(bytes));
+    if (meta) return { encoding: meta, source: "meta" };
+    if (hasUtf8Bom(bytes)) return { encoding: "utf-8", source: "bom" };
+    if (looksLikeValidUtf8(bytes) === "multibyte") return { encoding: "utf-8", source: "heuristic" };
+    return null;
+  }
+  function decodeBytes(bytes, encoding) {
+    try {
+      return new TextDecoder(encoding).decode(bytes);
+    } catch {
+      return new TextDecoder("utf-8").decode(bytes);
+    }
+  }
+
+  // src/engine/noveljs.js
+  var unescapeJs = (s) => s.replace(
+    /\\\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[^ux])/g,
+    (_, esc) => {
+      if (esc[0] === "u") return String.fromCharCode(parseInt(esc.slice(1), 16));
+      if (esc[0] === "x") return String.fromCharCode(parseInt(esc.slice(1), 16));
+      return { n: "\\n", r: "\\r", t: "	", b: "\\b", f: "\\f", v: "\\v", "0": "\\0" }[esc] ?? esc;
+    }
+  );
+  function readGroupLiterals(src, start) {
+    const open = src[start];
+    const close = open === "[" ? "]" : ")";
+    const literals = [];
+    let i = start + 1;
+    let depth = 1;
+    while (i < src.length && depth > 0) {
+      const ch = src[i];
+      if (ch === '"' || ch === "'") {
+        let j = i + 1;
+        let lit = "";
+        while (j < src.length && src[j] !== ch) {
+          if (src[j] === "\\\\" && j + 1 < src.length) {
+            lit += src[j] + src[j + 1];
+            j += 2;
+          } else {
+            lit += src[j++];
+          }
+        }
+        literals.push(unescapeJs(lit));
+        i = j + 1;
+      } else if (ch === open) {
+        depth++;
+        i++;
+      } else if (ch === close) {
+        depth--;
+        i++;
+      } else {
+        i++;
+      }
+    }
+    return { literals, end: i };
+  }
+  var isDocWriteJs = (text) => /document\\s*\\.\\s*write(ln)?\\s*\\(/.test(text.slice(0, 4096));
+  var stripTags = (s) => decodeEntities(String(s).replace(/<[^>]*>/g, " ")).replace(/\\s+/g, " ").trim();
+  var tidyTitle = (s, max = 48) => {
+    if (s.length <= max) return s;
+    const head = s.slice(0, max);
+    const cut = Math.max(
+      head.lastIndexOf("\\u3011"),
+      head.lastIndexOf("\\u3002"),
+      head.lastIndexOf("\\uFF0C"),
+      head.lastIndexOf(" ")
+    );
+    return \`\${head.slice(0, cut > 8 ? cut + 1 : max).trimEnd()}\\u2026\`;
+  };
+  function parsePagesArray(text) {
+    const items = [];
+    const re = /pages\\s*\\[\\s*(\\d+)\\s*\\]\\s*=\\s*\\[/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const { literals: fields, end } = readGroupLiterals(text, m.index + m[0].length - 1);
+      if (fields.length >= 2) {
+        const rawVol = fields[3];
+        items.push({
+          index: Number(m[1]),
+          file: fields[0].trim(),
+          title: tidyTitle(stripTags(fields[1])) || fields[0],
+          /* per the original template: pages[i][3] starting with '<' is an
+           * inline image/intro block, not a volume header */
+          volume: rawVol && !rawVol.trimStart().startsWith("<") ? stripTags(rawVol) : null
+        });
+      }
+      re.lastIndex = end;
+    }
+    items.sort((a, b) => a.index - b.index);
+    return items;
+  }
+  var naturalCompare = (a, b) => a.localeCompare(b, void 0, { numeric: true, sensitivity: "base" });
+  function synthesizeNovelNav(chm, encoding) {
+    const txtEntries = chm.entries.filter(
+      (e) => /\\.txt$/i.test(e.path) && e.path.startsWith("/") && e.length > 0
+    );
+    if (txtEntries.length < 3) return null;
+    const byBase = new Map(
+      txtEntries.map((e) => [e.path.split("/").pop().toLowerCase(), e.path])
+    );
+    let pages = null;
+    for (const e of chm.entries) {
+      if (!/\\.js$/i.test(e.path) || e.length === 0 || e.length > 512 * 1024) continue;
+      let text;
+      try {
+        const raw = chm.retrieve(e);
+        text = decodeBytes(raw, looksLikeValidUtf8(raw) === "multibyte" ? "utf-8" : encoding);
+      } catch {
+        continue;
+      }
+      if (!/pages\\s*\\[\\s*0\\s*\\]/.test(text)) continue;
+      const parsed = parsePagesArray(text);
+      if (parsed.length >= 3) {
+        pages = parsed;
+        break;
+      }
+    }
+    const node = nodeFactory();
+    const tocTree = [];
+    const docPaths = [];
+    if (pages) {
+      let currentVolume = null;
+      for (const item of pages) {
+        const local = byBase.get(\`\${item.file.toLowerCase()}.txt\`) ?? null;
+        if (!local) continue;
+        if (item.volume) {
+          currentVolume = node(item.volume, null);
+          tocTree.push(currentVolume);
+        }
+        (currentVolume ? currentVolume.children : tocTree).push(node(item.title, local));
+        docPaths.push(local);
+      }
+    }
+    if (!docPaths.length) {
+      const sorted = txtEntries.map((e) => e.path).sort(naturalCompare);
+      let sampled;
+      try {
+        const first = chm.resolve(sorted[0]);
+        sampled = decodeBytes(chm.retrieve(first, 0, Math.min(first.length, 4096)), encoding);
+      } catch {
+        return null;
+      }
+      if (!isDocWriteJs(sampled) && sorted.length < 10) return null;
+      for (const p of sorted) {
+        tocTree.push(node(p.split("/").pop().replace(/\\.txt$/i, ""), p));
+        docPaths.push(p);
+      }
+    }
+    return docPaths.length ? { tocTree, docPaths } : null;
+  }
+
+  // src/engine/book.js
+  var guessBookEncoding = (chm, sys, sampleBytes) => {
+    const fromDoc = sampleBytes && sniffEncoding(sampleBytes);
+    if (fromDoc) return fromDoc;
+    let lcid = chm.langId & 65535;
+    const langEntry = sys.get(4);
+    if (langEntry && langEntry.length >= 4) lcid = (langEntry[0] | langEntry[1] << 8) & 65535;
+    const fromLcid = LCID_CHARSETS[lcid];
+    return fromLcid ? { encoding: fromLcid, source: "lcid" } : { encoding: "utf-8", source: "default" };
+  };
+  var asciiz = (bytes) => {
+    if (!bytes) return null;
+    const end = bytes.indexOf(0);
+    const view = bytes.subarray(0, end < 0 ? bytes.length : end);
+    return view.length ? String.fromCharCode(...view) : null;
+  };
+  var findSitemapEntries = (chm, sys) => {
+    let hhc = chm.resolve(normalizePath("/", asciiz(sys.get(0)) || ""));
+    let hhk = chm.resolve(normalizePath("/", asciiz(sys.get(1)) || ""));
+    for (const e of chm.entries) {
+      const lower = e.path.toLowerCase();
+      if (!hhc && lower.endsWith(".hhc")) hhc = e;
+      else if (!hhk && lower.endsWith(".hhk")) hhk = e;
+    }
+    return { hhc, hhk };
+  };
+  var packTree = (root, basePath) => {
+    const node = nodeFactory();
+    const pack = (n) => node(
+      n.name,
+      n.local ? normalizePath(basePath, n.local) : null,
+      n.children.map(pack)
+    );
+    return root.children.map(pack);
+  };
+  var parseSitemapEntry = (chm, entry, encoding, mapper) => {
+    if (!entry) return [];
+    try {
+      const raw = chm.retrieve(entry);
+      const enc = encoding || sniffEncoding(raw)?.encoding || "utf-8";
+      return mapper(parseSitemap(decodeBytes(raw, enc)), entry.path);
+    } catch {
+      return [];
+    }
+  };
+  var fallbackTocFromPaths = (docPaths) => {
+    const node = nodeFactory();
+    const nameOf = (p) => {
+      const base = p.split("/").pop();
+      return base.replace(/\\.[^.]+$/, "") || base;
+    };
+    const byDir = /* @__PURE__ */ new Map();
+    for (const p of docPaths) {
+      const dir = p.slice(0, p.lastIndexOf("/")) || "/";
+      if (!byDir.has(dir)) byDir.set(dir, []);
+      byDir.get(dir).push(p);
+    }
+    if (byDir.size <= 1) return docPaths.map((p) => node(nameOf(p), p));
+    const tree = [];
+    for (const [dir, paths] of byDir) {
+      const label = dir === "/" ? "(root)" : dir.replace(/^\\//, "");
+      tree.push(node(label, null, paths.map((p) => node(nameOf(p), p))));
+    }
+    return tree;
+  };
+  var buildNav = (chm, sitemapEntries, encoding, docPathsForFallback = null) => {
+    const tocTree = parseSitemapEntry(chm, sitemapEntries.hhc, encoding, packTree);
+    const indexList = parseSitemapEntry(chm, sitemapEntries.hhk, encoding, (tree, base) => flattenIndex(tree).map(({ name, targets }) => ({
+      name,
+      targets: targets.map((t) => normalizePath(base, t.local)).filter(Boolean)
+    })));
+    let synthetic = null;
+    if (!tocTree.length) {
+      try {
+        synthetic = synthesizeNovelNav(chm, encoding);
+      } catch {
+      }
+    }
+    let finalToc = synthetic ? synthetic.tocTree : tocTree;
+    if (!finalToc.length && docPathsForFallback && docPathsForFallback.length) {
+      finalToc = fallbackTocFromPaths(docPathsForFallback);
+    }
+    return {
+      tocTree: finalToc,
+      indexList,
+      syntheticDocPaths: synthetic ? synthetic.docPaths : null
+    };
+  };
+  var listDocPaths = (chm) => chm.entries.filter((e) => /^\\/(?![#$:])/.test(e.path) && !e.path.endsWith("/") && isHtmlPath(e.path)).map((e) => e.path).sort((a, b) => a.localeCompare(b, void 0, { numeric: true, sensitivity: "base" }));
+  function openBook(chm, { encodingOverride = null, fileSize = 0 } = {}) {
+    const sys = chm.parseSystem();
+    const sitemapEntries = findSitemapEntries(chm, sys);
+    const htmlPaths = listDocPaths(chm);
+    let sample = null;
+    const samplePath = htmlPaths[Math.min(1, htmlPaths.length - 1)] || chm.entries.find((e) => /\\.txt$/i.test(e.path) && e.length > 256)?.path;
+    if (samplePath) {
+      try {
+        const entry = chm.resolve(samplePath);
+        sample = chm.retrieve(entry, 0, Math.min(entry.length, 64 * 1024));
+      } catch {
+      }
+    }
+    const detected = guessBookEncoding(chm, sys, sample);
+    const encoding = encodingOverride || detected.encoding;
+    const { tocTree, indexList, syntheticDocPaths } = buildNav(chm, sitemapEntries, encoding, htmlPaths);
+    const titleBytes = sys.get(3);
+    let title = null;
+    if (titleBytes && titleBytes.length) {
+      const nul = titleBytes.indexOf(0);
+      title = decodeBytes(titleBytes.subarray(0, nul < 0 ? titleBytes.length : nul), encoding).trim() || null;
+    }
+    return {
+      book: {
+        title,
+        encoding: detected.encoding,
+        encodingSource: detected.source,
+        tocTree,
+        indexList,
+        /* synthetic novel nav replaces the raw HTML list: template shells
+         * (frameset/iframe index pages) would otherwise pollute the spine */
+        docPaths: syntheticDocPaths || htmlPaths,
+        synthetic: !!syntheticDocPaths,
+        entryCount: chm.entries.length,
+        fileSize,
+        compression: chm.compressionEnabled
+      },
+      sitemapEntries
+    };
+  }
+
+  // src/services/chm.worker.js
+  var readerSync = new FileReaderSync();
+  var makeReader = (file, windowSize = 512 * 1024) => {
+    let cacheStart = -1;
+    let cacheBuf = null;
+    return {
+      size: file.size,
+      read(offset, length) {
+        if (offset < 0 || offset + length > file.size) return new Uint8Array(0);
+        if (length >= windowSize) {
+          return new Uint8Array(readerSync.readAsArrayBuffer(file.slice(offset, offset + length)));
+        }
+        const inCache = cacheStart >= 0 && offset >= cacheStart && offset + length <= cacheStart + cacheBuf.length;
+        if (!inCache) {
+          cacheStart = offset;
+          cacheBuf = new Uint8Array(
+            readerSync.readAsArrayBuffer(file.slice(offset, Math.min(file.size, offset + windowSize)))
+          );
+        }
+        return cacheBuf.subarray(offset - cacheStart, offset - cacheStart + length);
+      }
+    };
+  };
+  var ChmEngine = class {
+    #chm = null;
+    #sitemaps = { hhc: null, hhk: null };
+    /** Parse the archive; returns book metadata + navigation trees. */
+    open(file, encodingOverride = null) {
+      this.#chm = ChmFile.open(makeReader(file));
+      const { book, sitemapEntries } = openBook(this.#chm, {
+        encodingOverride,
+        fileSize: file.size
+      });
+      this.#sitemaps = sitemapEntries;
+      return book;
+    }
+    /** Retrieve one object; the buffer is transferred, not copied. */
+    get(path) {
+      const entry = this.#chm?.resolve(path);
+      if (!entry) return { path, found: false };
+      const data = this.#chm.retrieve(entry);
+      const buffer = data.byteOffset === 0 && data.buffer.byteLength === data.length ? data.buffer : data.slice().buffer;
+      return transfer(
+        { path, found: true, mime: mimeFor(path), isHtml: isRenderablePath(path), buffer },
+        [buffer]
+      );
+    }
+    /** (Re-)decode the TOC and keyword index with a given encoding. */
+    sitemaps(encoding = null) {
+      if (!this.#chm) return { tocTree: [], indexList: [] };
+      const { tocTree, indexList } = buildNav(this.#chm, this.#sitemaps, encoding, listDocPaths(this.#chm));
+      return { tocTree, indexList };
+    }
+    dropCaches() {
+      this.#chm?.dropCaches();
+    }
+    close() {
+      this.#chm = null;
+      this.#sitemaps = { hhc: null, hhk: null };
+    }
+  };
+  expose(new ChmEngine());
+})();
+/*! Bundled license information:
+
+comlink/dist/esm/comlink.mjs:
+  (**
+   * @license
+   * Copyright 2019 Google LLC
+   * SPDX-License-Identifier: Apache-2.0
+   *)
+*/
+`;let n;{const r=new Blob([e],{type:"text/javascript"});n=new Worker(URL.createObjectURL(r))}const t=St(n);return{open:(r,i=null)=>t.open(r,i),get:r=>t.get(r),sitemaps:(r=null)=>t.sitemaps(r),dropCaches:()=>t.dropCaches(),close:()=>t.close(),terminate:()=>{t[vt](),n.terminate()}}}const on=(e,n)=>n.some(t=>e instanceof t);let On,In;function hs(){return On||(On=[IDBDatabase,IDBObjectStore,IDBIndex,IDBCursor,IDBTransaction])}function ps(){return In||(In=[IDBCursor.prototype.advance,IDBCursor.prototype.continue,IDBCursor.prototype.continuePrimaryKey])}const an=new WeakMap,Ke=new WeakMap,Fe=new WeakMap;function ms(e){const n=new Promise((t,r)=>{const i=()=>{e.removeEventListener("success",s),e.removeEventListener("error",o)},s=()=>{t(G(e.result)),i()},o=()=>{r(e.error),i()};e.addEventListener("success",s),e.addEventListener("error",o)});return Fe.set(n,e),n}function _s(e){if(an.has(e))return;const n=new Promise((t,r)=>{const i=()=>{e.removeEventListener("complete",s),e.removeEventListener("error",o),e.removeEventListener("abort",o)},s=()=>{t(),i()},o=()=>{r(e.error||new DOMException("AbortError","AbortError")),i()};e.addEventListener("complete",s),e.addEventListener("error",o),e.addEventListener("abort",o)});an.set(e,n)}let ln={get(e,n,t){if(e instanceof IDBTransaction){if(n==="done")return an.get(e);if(n==="store")return t.objectStoreNames[1]?void 0:t.objectStore(t.objectStoreNames[0])}return G(e[n])},set(e,n,t){return e[n]=t,!0},has(e,n){return e instanceof IDBTransaction&&(n==="done"||n==="store")?!0:n in e}};function xt(e){ln=e(ln)}function gs(e){return ps().includes(e)?function(...n){return e.apply(cn(this),n),G(this.request)}:function(...n){return G(e.apply(cn(this),n))}}function vs(e){return typeof e=="function"?gs(e):(e instanceof IDBTransaction&&_s(e),on(e,hs())?new Proxy(e,ln):e)}function G(e){if(e instanceof IDBRequest)return ms(e);if(Ke.has(e))return Ke.get(e);const n=vs(e);return n!==e&&(Ke.set(e,n),Fe.set(n,e)),n}const cn=e=>Fe.get(e);function bs(e,n,{blocked:t,upgrade:r,blocking:i,terminated:s}={}){const o=indexedDB.open(e,n),a=G(o);return r&&o.addEventListener("upgradeneeded",u=>{r(G(o.result),u.oldVersion,u.newVersion,G(o.transaction),u)}),t&&o.addEventListener("blocked",u=>t(u.oldVersion,u.newVersion,u)),a.then(u=>{s&&u.addEventListener("close",()=>s()),i&&u.addEventListener("versionchange",l=>i(l.oldVersion,l.newVersion,l))}).catch(()=>{}),a}const ws=["get","getKey","getAll","getAllKeys","count"],ys=["put","add","delete","clear"],qe=new Map;function zn(e,n){if(!(e instanceof IDBDatabase&&!(n in e)&&typeof n=="string"))return;if(qe.get(n))return qe.get(n);const t=n.replace(/FromIndex$/,""),r=n!==t,i=ys.includes(t);if(!(t in(r?IDBIndex:IDBObjectStore).prototype)||!(i||ws.includes(t)))return;const s=async function(o,...a){const u=this.transaction(o,i?"readwrite":"readonly");let l=u.store;return r&&(l=l.index(a.shift())),(await Promise.all([l[t](...a),i&&u.done]))[0]};return qe.set(n,s),s}xt(e=>({...e,get:(n,t,r)=>zn(n,t)||e.get(n,t,r),has:(n,t)=>!!zn(n,t)||e.has(n,t)}));const Es=["continue","continuePrimaryKey","advance"],Dn={},un=new WeakMap,Ct=new WeakMap,Ss={get(e,n){if(!Es.includes(n))return e[n];let t=Dn[n];return t||(t=Dn[n]=function(...r){un.set(this,Ct.get(this)[n](...r))}),t}};async function*Ls(...e){let n=this;if(n instanceof IDBCursor||(n=await n.openCursor(...e)),!n)return;n=n;const t=new Proxy(n,Ss);for(Ct.set(t,n),Fe.set(t,cn(n));n;)yield t,n=await(un.get(t)||n.continue()),un.delete(t)}function Hn(e,n){return n===Symbol.asyncIterator&&on(e,[IDBIndex,IDBObjectStore,IDBCursor])||n==="iterate"&&on(e,[IDBIndex,IDBObjectStore])}xt(e=>({...e,get(n,t,r){return Hn(n,t)?Ls:e.get(n,t,r)},has(n,t){return Hn(n,t)||e.has(n,t)}}));const Q=bs("chmv",1,{upgrade(e){e.createObjectStore("books",{keyPath:"hash"}).createIndex("lastOpened","lastOpened"),e.createObjectStore("handles")}}),ks={getBook:async e=>(await Q).get("books",e).catch(()=>null),putBook:async e=>(await Q).put("books",e),deleteBook:async e=>{const n=await Q;await n.delete("books",e),await n.delete("handles",e).catch(()=>{})},listBooks:async()=>(await(await Q).getAll("books")).sort((n,t)=>(t.lastOpened||0)-(n.lastOpened||0)),putHandle:async(e,n)=>{try{await(await Q).put("handles",n,e)}catch{}},getHandle:async e=>{try{return await(await Q).get("handles",e)||null}catch{return null}}};async function xs(e){const t=e.size<=786432?[[0,e.size]]:[[0,262144],[Math.floor(e.size/2),262144],[e.size-262144,262144]],r=[new TextEncoder().encode(`chmv:${e.size}:`)];for(const[s,o]of t)r.push(new Uint8Array(await e.slice(s,s+o).arrayBuffer()));const i=await crypto.subtle.digest("SHA-256",await new Blob(r).arrayBuffer());return[...new Uint8Array(i)].map(s=>s.toString(16).padStart(2,"0")).join("")}const Tt=es({createEngine:fs,library:ks,hashFile:xs});"launchQueue"in window&&window.launchQueue.setConsumer(async e=>{const n=e.files?.[0];if(n)try{Tt.openFile(await n.getFile(),n)}catch{}});Zt(_`<${Qr} store=${Tt} />`,document.getElementById("app"));</script>
+  <style rel="stylesheet" crossorigin>:root{--reader-font: sans-serif;--reader-font-size: 19px;--reader-line-height: 1.9;--reader-letter-spacing: .02em;--reader-para-spacing: .9em;--reader-measure: 800px;--sidebar-width: 300px;--bg: #f7f6f3;--bg-raised: #ffffff;--bg-sunken: #efede8;--fg: #2c2a26;--fg-muted: #8a857c;--border: #e0dcd4;--accent: #b3541e;--accent-fg: #ffffff;--reader-bg: #fdfcfa;--reader-fg: #333029;--reader-fg-muted: #9b958a;--reader-link: #b3541e;--shadow: 0 8px 30px rgba(40, 30, 10, .12)}:root[data-theme=sepia]{--bg: #ede4d3;--bg-raised: #f6efe1;--bg-sunken: #e4d8c2;--fg: #4a3f2e;--fg-muted: #94886e;--border: #d7c9ae;--accent: #8c5a2b;--accent-fg: #fff8ec;--reader-bg: #f4ecda;--reader-fg: #45301b;--reader-fg-muted: #a08d6d;--reader-link: #8c5a2b;--shadow: 0 8px 30px rgba(80, 60, 20, .18)}:root[data-theme=dark]{color-scheme:dark;--bg: #211e1b;--bg-raised: #2b2723;--bg-sunken: #1a1815;--fg: #d8d2c7;--fg-muted: #8f887c;--border: #3a352f;--accent: #d98e4a;--accent-fg: #241a10;--reader-bg: #262320;--reader-fg: #cfc7b8;--reader-fg-muted: #7d766a;--reader-link: #d99a5b;--shadow: 0 8px 30px rgba(0, 0, 0, .5)}:root[data-theme=oled]{color-scheme:dark;--bg: #000000;--bg-raised: #101010;--bg-sunken: #000000;--fg: #c8c8c8;--fg-muted: #6e6e6e;--border: #222222;--accent: #e0a460;--accent-fg: #1c1206;--reader-bg: #000000;--reader-fg: #b9b9b9;--reader-fg-muted: #5d5d5d;--reader-link: #d0a067;--shadow: 0 8px 30px rgba(0, 0, 0, .9)}*{box-sizing:border-box}html,body{margin:0;height:100%}body{background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,Segoe UI,Roboto,PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif;overflow:hidden}.screen,#app{height:100%}[hidden]{display:none!important}button{font:inherit;color:inherit}#home{overflow-y:auto}.home-inner{max-width:860px;margin:0 auto;padding:40px 24px 60px}.home-brand{display:flex;align-items:center;gap:14px;margin-bottom:32px}.home-brand h1{margin:0;font-size:28px;letter-spacing:.02em}.home-brand p{margin:2px 0 0;color:var(--fg-muted);font-size:14px}.dropzone{border:2px dashed var(--border);border-radius:16px;background:var(--bg-raised);padding:42px 20px;text-align:center;color:var(--fg-muted);cursor:pointer;transition:border-color .15s,background .15s,transform .1s}.dropzone:hover,.dropzone:focus-visible{border-color:var(--accent)}.dropzone.dragover{border-color:var(--accent);background:var(--bg-sunken);transform:scale(1.005)}.dz-title{font-size:18px;color:var(--fg);margin:14px 0 4px}.dz-sub{margin:2px 0 12px}.btn{border:1px solid var(--border);background:var(--bg-raised);border-radius:10px;padding:9px 18px;cursor:pointer}.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}.btn:hover{filter:brightness(1.05)}.shelf{margin-top:44px}.shelf-head h2{font-size:16px;margin:0 0 14px;color:var(--fg-muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em}.shelf-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}.shelf-card{position:relative;background:var(--bg-raised);border:1px solid var(--border);border-radius:14px;padding:16px 16px 14px;cursor:pointer;transition:transform .1s,box-shadow .15s}.shelf-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}.shelf-card h3{margin:0 0 6px;font-size:15px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-right:26px}.shelf-meta{color:var(--fg-muted);font-size:12.5px;display:flex;justify-content:space-between;gap:8px;margin-top:10px}.progress-track{height:4px;border-radius:2px;background:var(--bg-sunken);overflow:hidden;margin-top:10px}.progress-fill{height:100%;background:var(--accent);border-radius:2px}.shelf-remove{position:absolute;top:10px;right:10px;border:none;background:transparent;color:var(--fg-muted);font-size:16px;line-height:1;border-radius:6px;padding:4px 6px;cursor:pointer}.shelf-remove:hover{background:var(--bg-sunken);color:var(--fg)}.shelf-empty{color:var(--fg-muted)}.home-foot{margin-top:48px;color:var(--fg-muted);font-size:13px;border-top:1px solid var(--border);padding-top:18px}#reader{display:flex;flex-direction:column}.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:var(--bg-raised);border-bottom:1px solid var(--border);flex:none;z-index:30}.topbar-group{display:flex;align-items:center;gap:6px;min-width:0}.book-heading{display:flex;flex-direction:column;min-width:0;margin-left:4px;line-height:1.25}.book-title{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.book-subtitle{color:var(--fg-muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border:none;border-radius:9px;background:transparent;color:var(--fg-muted);cursor:pointer;flex:none}.icon-btn:hover{background:var(--bg-sunken);color:var(--fg)}.icon-btn[aria-pressed=true]{color:var(--accent)}.select,.input{background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font:inherit;font-size:13.5px;max-width:170px}.enc-label{color:var(--fg-muted);font-size:12px;border:1px solid var(--border);border-radius:6px;padding:2px 5px;user-select:none}.reader-body{flex:1;display:flex;min-height:0}.sidebar{width:var(--sidebar-width);min-width:180px;max-width:60vw;background:var(--bg-raised);border-right:1px solid var(--border);display:flex;flex-direction:column;flex:none;min-height:0}body.sidebar-hidden .sidebar,body.sidebar-hidden .splitter{display:none}.sidebar-tabs{display:flex;padding:8px 10px 0;gap:4px}.tab{flex:1;border:none;background:transparent;color:var(--fg-muted);padding:8px 4px;cursor:pointer;border-radius:8px 8px 0 0;border-bottom:2px solid transparent;font-weight:600;font-size:13.5px}.tab.active{color:var(--accent);border-bottom-color:var(--accent)}.tab:hover:not(.active){color:var(--fg)}.sidebar-search{padding:8px 10px}.sidebar-search .input{width:100%;max-width:none}.sidebar-panel{flex:1;overflow-y:auto;padding:2px 6px 20px;overscroll-behavior:contain}.tree-row{display:flex;align-items:flex-start;border-radius:7px;cursor:pointer;font-size:13.5px;line-height:1.45}.tree-row:hover{background:var(--bg-sunken)}.tree-row.active{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);font-weight:600}.tree-row.filter-hit .tree-label{text-decoration:underline;text-decoration-color:var(--accent)}.tree-caret{flex:none;width:20px;text-align:center;color:var(--fg-muted);padding:5px 0;font-size:11px;user-select:none}.tree-caret.leaf{pointer-events:none}.tree-label{padding:5px 6px 5px 0;word-break:break-word;flex:1}.tree-empty{color:var(--fg-muted);padding:14px 10px;font-size:13px}.index-entry{padding:6px 10px;border-radius:7px;cursor:pointer;font-size:13.5px;word-break:break-word}.index-entry:hover{background:var(--bg-sunken)}.index-targets{margin:4px 0 2px 12px}.index-target{color:var(--fg-muted);padding:3px 8px;font-size:12.5px;border-left:2px solid var(--border)}.index-target:hover{color:var(--accent);border-left-color:var(--accent)}.splitter{width:5px;cursor:col-resize;flex:none;background:transparent;transition:background .15s}.splitter:hover,.splitter.dragging{background:var(--accent)}.content-col{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--reader-bg)}.chapter-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 16px}.chapter-nav.top{border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--reader-bg) 85%,var(--bg));flex:none;z-index:10}.chapter-nav.bottom{max-width:min(var(--reader-measure),100%);margin:0 auto 40px;padding:18px 16px;width:100%}body.focus-mode .chapter-nav.top{display:none}.nav-btn{border:1px solid var(--border);background:transparent;color:var(--fg-muted);border-radius:9px;padding:6px 14px;cursor:pointer;white-space:nowrap;font-size:13.5px}.nav-btn:hover:not(:disabled){color:var(--accent);border-color:var(--accent)}.nav-btn:disabled{opacity:.35;cursor:default}.nav-btn.labeled{max-width:45%;overflow:hidden;text-overflow:ellipsis}.nav-pos{color:var(--fg-muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.scroller{flex:1;overflow-y:auto;min-height:0;scrollbar-gutter:stable both-edges}.scroller:focus{outline:none}.reading-measure{max-width:min(var(--reader-measure),100%);margin:0 auto;padding:26px 20px 30px;width:100%}.loading{display:flex;align-items:center;gap:10px;color:var(--fg-muted);padding:30px 0;justify-content:center}.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}body.focus-mode .topbar,body.focus-mode .sidebar,body.focus-mode .splitter{display:none}.focus-exit{position:fixed;top:14px;right:14px;z-index:40;opacity:.25;transition:opacity .15s}.focus-exit:hover{opacity:1}.focus-exit .icon-btn{background:var(--bg-raised);box-shadow:var(--shadow)}.settings-panel{position:fixed;top:54px;right:12px;width:320px;max-width:calc(100vw - 24px);max-height:calc(100vh - 70px);overflow-y:auto;background:var(--bg-raised);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px;z-index:50}.set-group{margin-bottom:16px}.set-group:last-child{margin-bottom:0}.set-title{font-size:12px;font-weight:700;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}.seg-row{display:flex;flex-wrap:wrap;gap:6px}.seg-btn{border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:6px 11px;cursor:pointer;font-size:13px}.seg-btn[aria-checked=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}.sliders label{display:block;font-size:13px;margin-bottom:10px;color:var(--fg)}.sliders input[type=range]{width:100%;margin-top:4px;accent-color:var(--accent)}.set-val{color:var(--fg-muted);float:right}.check-row{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;margin-bottom:10px;cursor:pointer}.check-row input{margin-top:3px;accent-color:var(--accent)}.check-row small{color:var(--fg-muted)}.set-hints small{color:var(--fg-muted);line-height:1.6}.toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%);background:var(--fg);color:var(--bg);border-radius:10px;padding:10px 18px;font-size:13.5px;z-index:100;box-shadow:var(--shadow);max-width:min(480px,calc(100vw - 40px))}@media(max-width:720px){.sidebar{position:fixed;top:51px;bottom:0;left:0;z-index:25;box-shadow:var(--shadow)}.splitter{display:none}}.tree-more{padding:8px 10px}.tree-more .btn{width:100%;font-size:12.5px;padding:6px 10px}</style>
+</head>
+<body>
+<div id="app"></div>
+</body>
+</html>

@@ -27,6 +27,7 @@ import * as Comlink from 'comlink';
  * @property {(file: File, encoding?: string|null) => Promise<BookInfo>} open
  * @property {(path: string) => Promise<Asset>} get
  * @property {(encoding?: string|null) => Promise<{tocTree: Array, indexList: Array}>} sitemaps
+ * @property {() => Promise<Array<{path: string, length: number, mime: string}>>} listEntries
  * @property {() => Promise<void>} dropCaches
  * @property {() => Promise<void>} close
  * @property {() => void} terminate
@@ -50,6 +51,7 @@ export function createEngine() {
     open: (file, encoding = null) => proxy.open(file, encoding),
     get: (path) => proxy.get(path),
     sitemaps: (encoding = null) => proxy.sitemaps(encoding),
+    listEntries: () => proxy.listEntries(),
     dropCaches: () => proxy.dropCaches(),
     close: () => proxy.close(),
     terminate: () => {

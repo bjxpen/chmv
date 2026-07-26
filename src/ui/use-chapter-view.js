@@ -19,6 +19,7 @@ export function useChapterView(store, hostRef, scrollerRef) {
   useEffect(() => {
     const renderer = new Renderer(hostRef.current, {
       fetchAsset: (path) => store.fetchAsset(path),
+      listEntries: () => store.listEntries(),
       onNavigate: (path, fragment) => store.navigateTo(path, { fragment }),
     });
     renderer.setStyleOverride(store.settings.value.overrideStyles);
