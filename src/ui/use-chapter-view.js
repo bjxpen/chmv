@@ -22,6 +22,7 @@ export function useChapterView(store, hostRef, scrollerRef) {
       onNavigate: (path, fragment) => store.navigateTo(path, { fragment }),
     });
     renderer.setStyleOverride(store.settings.value.overrideStyles);
+    renderer.setRunJs(store.settings.value.runJs);
     view.current.renderer = renderer;
 
     store.connectView({
@@ -74,6 +75,18 @@ export function useChapterView(store, hostRef, scrollerRef) {
       store.navigateTo(store.currentPath.value, { scrollTo: keep });
     }
   }, [overrideStyles]);
+
+  /* run-js toggle → re-render current chapter */
+  const runJs = store.settings.value.runJs;
+  useEffect(() => {
+    const r = view.current.renderer;
+    if (!r || r.runJs === runJs) return;
+    r.setRunJs(runJs);
+    if (store.currentPath.value) {
+      const keep = scrollerRef.current?.scrollTop ?? 0;
+      store.navigateTo(store.currentPath.value, { scrollTo: keep });
+    }
+  }, [runJs]);
 
   /* continuous scroll: append next chapter near the bottom, prune far ones */
   const onScroll = async () => {
