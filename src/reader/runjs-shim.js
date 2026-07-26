@@ -101,6 +101,20 @@ document.addEventListener('click', function (e) {
   return false;
 }, true);
 
+/* Auto-resize: report the iframe's content height to the parent so
+ * the parent can size the .subframe wrapper. Without this, the iframe
+ * has a fixed height and content gets clipped. Runs after load and
+ * after any document.write (via MutationObserver). */
+function reportHeight() {
+  var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+  parent.postMessage({ source: MSG_SRC, type: 'resize', height: h }, '*');
+}
+if (document.readyState === 'complete') reportHeight();
+else window.addEventListener('load', reportHeight);
+/* Also report after mutations (document.write may add content after load). */
+var mo = new MutationObserver(function () { reportHeight(); });
+mo.observe(document.documentElement, { childList: true, subtree: true });
+
 /* Receive response-blob messages from the parent: updates the local
  * BLOBS map so subsequent document.write calls find the newly-fetched
  * URL. Also handles parent-injected navigation if needed. */
