@@ -70,5 +70,19 @@ export const baseChapterCss = (overrideStyles) => `
     content: ''; flex: 1;
     border-top: 1px solid color-mix(in srgb, currentColor 35%, transparent);
   }
+  /* Sub-frame wrapper: sandboxed iframe for runJs mode. The shim
+   * reports its content height via postMessage; the parent sets the
+   * wrapper height accordingly. min-height ensures a reasonable default
+   * before the first resize message arrives. */
+  .subframe {
+    width: 100%;
+    min-height: 40vh;
+  }
+  .subframe iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 40vh;
+    border: none;
+  }
   ${overrideStyles ? LEGACY_OVERRIDES : ''}
 `;

@@ -247,6 +247,11 @@ const hijackBlobUrl = hijackIframe?.getAttribute('src') || '';
 const hijackBlob = hijackBlobs.get(hijackBlobUrl);
 ok(hijackBlob, 'renderer: runJs iframe blob captured by mock');
 const hijackText = await hijackBlob.text();
+/* <meta charset="utf-8"> must be in the iframe <head> — without it,
+ * the browser may sniff a different encoding on file:// (no HTTP
+ * Content-Type header), garbling CJK text decoded from GBK/Big5. */
+ok(/<meta charset="utf-8">/i.test(hijackText),
+  'renderer: runJs iframe HTML has <meta charset="utf-8">');
 ok(/__chmvNavigate/.test(hijackText),
   'renderer: runJs shim defines __chmvNavigate');
 ok(/document\.write\s*=\s*function/.test(hijackText),
@@ -259,15 +264,16 @@ ok(/request-blob/.test(hijackText),
   'renderer: runJs shim has request-blob fallback for cache misses');
 /* The shim embeds the BLOBS map as JSON (not live parent read) because
  * cross-origin parent access is blocked on file://. Verify the embedded
- * map is present and references blob URLs. */
+ * map is present and references data: URLs (data: not blob: because
+ * the cross-origin iframe can't load parent blob: URLs on file://). */
 ok(/var BLOBS\s*=/.test(hijackText),
   'renderer: runJs shim embeds BLOBS JSON snapshot');
 ok(/response-blob/.test(hijackText),
   'renderer: runJs shim handles response-blob messages from parent');
-/* static resource URLs rewritten to blob: in the iframe HTML */
-const hijackBlobRefs = (hijackText.match(/blob:hijack\/\d+/g) || []).length;
-ok(hijackBlobRefs > 0,
-  `renderer: runJs iframe HTML references blob URLs (${hijackBlobRefs})`);
+/* static resource URLs rewritten to data: in the iframe HTML */
+const hijackDataRefs = (hijackText.match(/data:[a-z]+\/[a-z]+;base64,/gi) || []).length;
+ok(hijackDataRefs > 0,
+  `renderer: runJs iframe HTML references data URLs (${hijackDataRefs})`);
 /* document.location = ... in inlined scripts rewritten to __chmvNavigate */
 ok(/__chmvNavigate\(/.test(hijackText),
   'renderer: runJs document.location calls rewritten to __chmvNavigate');

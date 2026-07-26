@@ -151,11 +151,9 @@ export class Renderer {
     this.idlePool.length = 0;
     this.idlePoolBytes = 0;
     this.assetPending.clear();
-    /* Revoke every runJs pre-built blob URL. */
-    if (this.runJsBlobs) {
-      for (const url of this.runJsBlobs.values()) URL.revokeObjectURL(url);
-      this.runJsBlobs = null;
-    }
+    /* runJsBlobs now contains data: URLs (not blob:) — no revocation
+     * needed. Just drop the map. */
+    this.runJsBlobs = null;
     this.runJsBlobsPending.clear();
     this._lastNavSeq = 0;
     /* Note: we intentionally do NOT remove the shadow 'click' or window
@@ -204,7 +202,12 @@ export class Renderer {
     if (!this.overrideStyles) this._collectStyleTexts(doc, path, styleTexts);
     this._sanitize(doc, allowScripts);
     const fragment = this._extractBodyFragment(doc);
-    await this._resolveAssets(fragment, path, blobs);
+    /* allowScripts=true means this fragment is going into a sandboxed
+     * iframe. Skip blob: URL resolution for images/backgrounds — the
+     * cross-origin iframe can't load parent-created blob: URLs. Leave
+     * relative URLs intact; _rewriteStaticUrls (called later in
+     * _buildRunJsSubFrame) will convert them to data: URLs. */
+    await this._resolveAssets(fragment, path, blobs, allowScripts);
     return { fragment, styleTexts };
   }
 
@@ -330,7 +333,11 @@ export class Renderer {
     /* The runtime shim must be the FIRST <script> so it overrides
      * document.write before any legacy script calls it. */
     const shim = this._buildRunJsShim(target);
-    const htmlDoc = `<!DOCTYPE html><html><head>${styleTags.join('')}${shim}</head>` +
+    /* <meta charset="utf-8"> is mandatory: the blob is UTF-8 bytes, but
+     * without a charset declaration the browser may sniff a different
+     * encoding (especially on file:// where there's no HTTP Content-Type
+     * header), garbling CJK text that was decoded from GBK/Big5. */
+    const htmlDoc = `<!DOCTYPE html><html><head><meta charset="utf-8">${styleTags.join('')}${shim}</head>` +
       tempBody.innerHTML + `</html>`;
     /* Serve the sub-frame as a blob: URL. On file:// the blob: iframe
      * gets origin "null" (cross-origin to the parent), so the iframe
@@ -460,24 +467,37 @@ export class Renderer {
    * chapter files discovered by parsing pages[] from the inlined
    * page.js. The shim's BLOBS map is populated from this cache.
    */
+  /**
+   * Lazily fetch a single CHM asset and cache its data URL. Uses data:
+   * URLs (not blob:) because the sandboxed iframe is cross-origin on
+   * file:// (origin "null") and can't load parent-created blob: URLs.
+   * Data URLs are self-contained and work cross-origin. Cached in
+   * this.runJsBlobs (reused across chapters, but NOT revoked — data
+   * URLs don't need revocation). Returns null on miss/dispose.
+   */
   async _getBlobForPath(path) {
     if (!path || this._disposed) return null;
     const key = path.toLowerCase();
     if (this.runJsBlobs?.has(key)) return this.runJsBlobs.get(key);
     /* In-flight dedup: if two concurrent callers request the same path
      * (e.g. _prefetchRunJsBlobs running while a shim request-blob arrives),
-     * share a single fetch+createObjectURL. Without this, the loser's
-     * blob URL would be overwritten in the map and leak forever. */
+     * share a single fetch+encode. Without this, the loser's URL would
+     * be overwritten in the map. */
     let p = this.runJsBlobsPending.get(key);
     if (!p) {
       p = (async () => {
         const asset = await this._fetchRaw(path);
         if (this._disposed || !asset) return null;
         if (!this.runJsBlobs) this.runJsBlobs = new Map();
-        const blob = new Blob([new Uint8Array(asset.buffer)], {
-          type: asset.mime || mimeFor(path),
-        });
-        const url = URL.createObjectURL(blob);
+        /* Use data: URL (not blob:) because the sandboxed iframe is
+         * cross-origin on file:// and can't load parent blob: URLs.
+         * data: URLs are base64-encoded — ~33% larger, but work
+         * cross-origin and need no revocation. */
+        const bytes = new Uint8Array(asset.buffer);
+        const mime = asset.mime || mimeFor(path);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        const url = `data:${mime};base64,${globalThis.btoa(binary)}`;
         this.runJsBlobs.set(key, url);
         return url;
       })();
@@ -572,10 +592,6 @@ export class Renderer {
     const d = e.data;
     if (!d || d.source !== IFRAME_MSG_SOURCE) return;
     if (d.type === 'navigate') {
-      /* Stale-message suppression: track the highest seq seen so
-       * navigations from unmounted iframes (lower seq) are dropped.
-       * The counter is per-Renderer (not on window) to avoid global
-       * pollution. The shim bumps its own local navSeq per call. */
       if (typeof d.seq === 'number') {
         if (d.seq <= this._lastNavSeq) return;
         this._lastNavSeq = d.seq;
@@ -584,9 +600,6 @@ export class Renderer {
         this.hooks.onNavigate(d.path, '');
       }
     } else if (d.type === 'request-blob' && d.path) {
-      /* Shim cache miss — fetch, cache, and send the URL back to the
-       * iframe so its local BLOBS map is updated for subsequent
-       * document.write calls in the same iframe. */
       this._getBlobForPath(d.path).then((url) => {
         if (url && e.source) {
           e.source.postMessage({
@@ -595,15 +608,31 @@ export class Renderer {
           }, '*');
         }
       }).catch(() => {});
+    } else if (d.type === 'resize' && typeof d.height === 'number') {
+      /* Auto-resize: the shim reports its content height so we can
+       * size the .subframe wrapper. Find the iframe that sent this
+       * message and set its wrapper height. */
+      for (const section of this.sectionBlobs.keys()) {
+        const ifr = section.querySelector('.subframe iframe');
+        if (ifr && ifr.contentWindow === e.source) {
+          const wrapper = ifr.closest('.subframe');
+          if (wrapper) {
+            wrapper.style.height = `${Math.min(d.height, 2000)}px`;
+            ifr.style.height = `${Math.min(d.height, 2000)}px`;
+          }
+          break;
+        }
+      }
     }
   }
 
   /**
    * Rewrite static resource URLs (img src, link href, etc.) in a
-   * sub-frame fragment to cached blob URLs. Mirrors what the runtime
+   * sub-frame fragment to cached data: URLs. Mirrors what the runtime
    * shim does for dynamic document.write output, but for the initial
-   * HTML that the iframe parses directly. Uses _collectResourceRefs
-   * for the path-walk, then looks up each in the runJsBlobs cache.
+   * HTML that the iframe parses directly. Also projects legacy
+   * background= attributes onto inline style (since the HTML attribute
+   * alone doesn't render in modern browsers).
    */
   _rewriteStaticUrls(rootEl, basePath) {
     if (!this.runJsBlobs) return;
@@ -611,10 +640,19 @@ export class Renderer {
       for (const attr of RESOURCE_ATTRS) {
         if (!el.hasAttribute(attr)) continue;
         const v = el.getAttribute(attr);
-        if (!v || v.startsWith('blob:') || isExternalHref(v) || v.startsWith('#')) continue;
+        if (!v || v.startsWith('blob:') || v.startsWith('data:') || isExternalHref(v) || v.startsWith('#')) continue;
         const p = normalizePath(basePath, v);
-        const blobUrl = p && this.runJsBlobs.get(p.toLowerCase());
-        if (blobUrl) el.setAttribute(attr, blobUrl);
+        const url = p && this.runJsBlobs.get(p.toLowerCase());
+        if (!url) continue;
+        if (attr === 'background') {
+          /* Legacy background= attribute: project onto inline style
+           * (the HTML attribute alone doesn't render in modern browsers). */
+          el.removeAttribute('background');
+          const existing = el.getAttribute('style') || '';
+          el.setAttribute('style', `${existing}background-image:url("${url}");`.trimStart());
+        } else {
+          el.setAttribute(attr, url);
+        }
       }
     }
   }
@@ -635,7 +673,11 @@ export class Renderer {
             if (p) {
               const asset = await this._fetchRaw(p);
               if (asset) {
-                inlinedText = decodeBytes(new Uint8Array(asset.buffer), 'utf-8');
+                /* Use the book's encoding (e.g. GBK for CJK CHMs), not
+                 * UTF-8 — legacy .js files like page.js are GBK-encoded
+                 * and contain CJK string literals (pages[] array). */
+                inlinedText = decodeBytes(new Uint8Array(asset.buffer),
+                  this.encodingOverride || this.bookEncoding);
                 srcResolved = true;
                 continue;
               }
@@ -670,61 +712,73 @@ export class Renderer {
     return rewriteScriptNav(src);
   }
 
-  async _resolveAssets(rootEl, docPath, blobs) {
+  /**
+   * Resolve asset references in a fragment: images, inline styles,
+   * legacy background= attributes, and link interception.
+   * @param {boolean} allowScripts — if true, this fragment is going
+   *   into a sandboxed iframe. Skip blob: URL creation (the cross-origin
+   *   iframe can't load parent blob: URLs); leave relative URLs for
+   *   _rewriteStaticUrls to convert to data: URLs. Link interception
+   *   still runs (marks internal links for the shim's click handler).
+   */
+  async _resolveAssets(rootEl, docPath, blobs, allowScripts = false) {
     const jobs = [];
     const inSubframe = (el) => el.closest && el.closest(SUBFRAME_SELECTOR) !== null;
 
-    for (const img of rootEl.querySelectorAll('img[src], input[type="image"][src]')) {
-      const src = img.getAttribute('src');
-      if (!src || src.startsWith('blob:') || isExternalHref(src) || inSubframe(img)) continue;
-      const assetPath = normalizePath(docPath, src);
-      if (!assetPath) continue;
-      img.removeAttribute('src');
-      img.setAttribute('loading', 'lazy');
-      jobs.push(
-        this._acquireAsset(assetPath, blobs).then((url) => {
-          if (url) {
-            img.setAttribute('src', url);
-          } else {
-            img.setAttribute('alt', img.getAttribute('alt') || `[missing: ${src}]`);
-          }
-        }),
-      );
-    }
-
-    if (!this.overrideStyles) {
-      for (const el of rootEl.querySelectorAll('[style*="url(" i]')) {
-        const style = el.getAttribute('style') || '';
-        jobs.push(
-          this._rewriteCss(style, docPath, blobs, 2).then((rew) => {
-            el.setAttribute('style', rew);
-          }),
-        );
-      }
-      /* Legacy `background="images/foo.jpg"` attribute on <body>/<table>/
-       * <td> — extremely common in 2000s-era CJK CHMs (e.g. 搜书吧 novel
-       * templates). Resolve to a blob URL and project onto the element's
-       * inline style, since the `background` HTML attribute has no
-       * DOM-property equivalent and would otherwise 404 against the
-       * sub-frame's blob:/about:srcdoc base. */
-      for (const el of rootEl.querySelectorAll('[background]')) {
-        if (inSubframe(el)) continue;
-        const bg = el.getAttribute('background');
-        if (!bg || bg.startsWith('blob:') || isExternalHref(bg)) continue;
-        const assetPath = normalizePath(docPath, bg);
+    if (!allowScripts) {
+      for (const img of rootEl.querySelectorAll('img[src], input[type="image"][src]')) {
+        const src = img.getAttribute('src');
+        if (!src || src.startsWith('blob:') || src.startsWith('data:') || isExternalHref(src) || inSubframe(img)) continue;
+        const assetPath = normalizePath(docPath, src);
         if (!assetPath) continue;
-        el.removeAttribute('background');
+        img.removeAttribute('src');
+        img.setAttribute('loading', 'lazy');
         jobs.push(
           this._acquireAsset(assetPath, blobs).then((url) => {
             if (url) {
-              const existing = el.getAttribute('style') || '';
-              el.setAttribute('style', `${existing}background-image:url("${url}");`.trimStart());
+              img.setAttribute('src', url);
+            } else {
+              img.setAttribute('alt', img.getAttribute('alt') || `[missing: ${src}]`);
             }
           }),
         );
       }
+
+      if (!this.overrideStyles) {
+        for (const el of rootEl.querySelectorAll('[style*="url(" i]')) {
+          const style = el.getAttribute('style') || '';
+          jobs.push(
+            this._rewriteCss(style, docPath, blobs, 2).then((rew) => {
+              el.setAttribute('style', rew);
+            }),
+          );
+        }
+        /* Legacy `background="images/foo.jpg"` attribute on <body>/<table>/
+         * <td> — extremely common in 2000s-era CJK CHMs (e.g. 搜书吧 novel
+         * templates). Resolve to a blob URL and project onto the element's
+         * inline style, since the `background` HTML attribute has no
+         * DOM-property equivalent and would otherwise 404 against the
+         * sub-frame's blob:/about:srcdoc base. */
+        for (const el of rootEl.querySelectorAll('[background]')) {
+          if (inSubframe(el)) continue;
+          const bg = el.getAttribute('background');
+          if (!bg || bg.startsWith('blob:') || bg.startsWith('data:') || isExternalHref(bg)) continue;
+          const assetPath = normalizePath(docPath, bg);
+          if (!assetPath) continue;
+          el.removeAttribute('background');
+          jobs.push(
+            this._acquireAsset(assetPath, blobs).then((url) => {
+              if (url) {
+                const existing = el.getAttribute('style') || '';
+                el.setAttribute('style', `${existing}background-image:url("${url}");`.trimStart());
+              }
+            }),
+          );
+        }
+      }
     }
 
+    /* Link interception always runs (both top-level and sub-frame). */
     for (const a of rootEl.querySelectorAll('a[href]')) {
       if (a.dataset.internalHref) continue;
       const href = a.getAttribute('href');
@@ -756,6 +810,7 @@ export class Renderer {
       if (css == null && st.path) {
         const asset = await this._fetchRaw(st.path);
         if (!asset) continue;
+        /* CSS files in CJK CHMs may be GBK-encoded (rare but possible). */
         css = decodeBytes(new Uint8Array(asset.buffer), 'utf-8');
       }
       if (css) {
