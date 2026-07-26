@@ -10,27 +10,27 @@ ok(NAVIGATE_GLOBAL === '__chmvNavigate', 'NAVIGATE_GLOBAL exported');
 const nr = rewriteScriptNav;
 
 /* assignment forms */
-ok(nr('document.location = "x";') === `parent.${NAVIGATE_GLOBAL}("x");`,
+ok(nr('document.location = "x";') === `${NAVIGATE_GLOBAL}("x");`,
   'document.location assign');
-ok(nr('document.location.href = "x";') === `parent.${NAVIGATE_GLOBAL}("x");`,
+ok(nr('document.location.href = "x";') === `${NAVIGATE_GLOBAL}("x");`,
   'document.location.href assign');
-ok(nr('location.href = "x";') === `parent.${NAVIGATE_GLOBAL}("x");`,
+ok(nr('location.href = "x";') === `${NAVIGATE_GLOBAL}("x");`,
   'location.href assign');
-ok(nr('location = "x";') === `parent.${NAVIGATE_GLOBAL}("x");`,
+ok(nr('location = "x";') === `${NAVIGATE_GLOBAL}("x");`,
   'bare location assign');
-ok(nr('this.location = "x";') === `parent.${NAVIGATE_GLOBAL}("x");`,
+ok(nr('this.location = "x";') === `${NAVIGATE_GLOBAL}("x");`,
   'this.location assign');
-ok(nr('window.location = "x";') === `parent.${NAVIGATE_GLOBAL}("x");`,
+ok(nr('window.location = "x";') === `${NAVIGATE_GLOBAL}("x");`,
   'window.location assign');
-ok(nr('top.location = "x";') === `parent.${NAVIGATE_GLOBAL}("x");`,
+ok(nr('top.location = "x";') === `${NAVIGATE_GLOBAL}("x");`,
   'top.location assign');
-ok(nr('self.location = "x";') === `parent.${NAVIGATE_GLOBAL}("x");`,
+ok(nr('self.location = "x";') === `${NAVIGATE_GLOBAL}("x");`,
   'self.location assign');
 
 /* call forms */
-ok(nr('location.assign("x");') === `parent.${NAVIGATE_GLOBAL}("x");`,
+ok(nr('location.assign("x");') === `${NAVIGATE_GLOBAL}("x");`,
   'location.assign call');
-ok(nr('location.replace("x");') === `parent.${NAVIGATE_GLOBAL}("x");`,
+ok(nr('location.replace("x");') === `${NAVIGATE_GLOBAL}("x");`,
   'location.replace call');
 
 /* == / === must NOT be rewritten */
@@ -40,7 +40,7 @@ ok(nr('if (location.href === "x") {}') === 'if (location.href === "x") {}',
   '=== not treated as assign');
 
 /* function-call RHS with commas preserved */
-ok(nr('location.href = f("a","b");') === `parent.${NAVIGATE_GLOBAL}(f("a","b"));`,
+ok(nr('location.href = f("a","b");') === `${NAVIGATE_GLOBAL}(f("a","b"));`,
   'function-call RHS with commas');
 
 /* string literal contents not rewritten */
@@ -63,17 +63,17 @@ ok(nr('location.search = "?x";') === 'location.search = "?x";',
 
 /* multiple on one line */
 ok(nr('location.href="a";location.href="b";') ===
-   `parent.${NAVIGATE_GLOBAL}("a");parent.${NAVIGATE_GLOBAL}("b");`,
+   `${NAVIGATE_GLOBAL}("a");${NAVIGATE_GLOBAL}("b");`,
   'multiple assigns on one line');
 
 /* concatenation RHS */
-ok(nr('location.href = "a" + "b";') === `parent.${NAVIGATE_GLOBAL}("a" + "b");`,
+ok(nr('location.href = "a" + "b";') === `${NAVIGATE_GLOBAL}("a" + "b");`,
   'concatenation RHS');
 
 /* real novel.chm patterns */
-ok(nr('document.location = url;') === `parent.${NAVIGATE_GLOBAL}(url);`,
+ok(nr('document.location = url;') === `${NAVIGATE_GLOBAL}(url);`,
   'novel: document.location = url');
-ok(nr('document.location = "index.htm";') === `parent.${NAVIGATE_GLOBAL}("index.htm");`,
+ok(nr('document.location = "index.htm";') === `${NAVIGATE_GLOBAL}("index.htm");`,
   'novel: document.location = "index.htm"');
 
 done();
