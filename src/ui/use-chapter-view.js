@@ -27,7 +27,6 @@ export function useChapterView(store, hostRef, scrollerRef) {
 
     store.connectView({
       reset: () => {
-        /* new book: old archive's assets are invalid — full teardown */
         renderer.dispose();
         view.current.sections = [];
       },
@@ -38,7 +37,6 @@ export function useChapterView(store, hostRef, scrollerRef) {
         view.current.sections = [{ path, el: section }];
         const scroller = scrollerRef.current;
         if (fragment && renderer.scrollToFragment(section, fragment)) {
-          /* positioned by anchor */
         } else if (scrollTo && typeof scrollTo === 'object') {
           scroller.scrollTop = (scrollTo.ratio || 0) * scroller.scrollHeight;
         } else {
@@ -52,7 +50,6 @@ export function useChapterView(store, hostRef, scrollerRef) {
         if (!scroller) return { scroll: 0, ratio: 0 };
         const range = scroller.scrollHeight - scroller.clientHeight;
         let scroll = scroller.scrollTop;
-        /* continuous mode: offset within the current chapter's section */
         const current = view.current.sections.find((s) => s.path === store.currentPath.value);
         if (current && view.current.sections.length > 1) {
           scroll = Math.max(0, scroller.getBoundingClientRect().top - current.el.getBoundingClientRect().top);
@@ -96,7 +93,6 @@ export function useChapterView(store, hostRef, scrollerRef) {
     const scroller = scrollerRef.current;
     if (!scroller || !sections.length) return;
 
-    /* which chapter is at the viewport top? */
     const top = scroller.getBoundingClientRect().top + 8;
     const visible = sections.reduce(
       (acc, s) => (s.el.getBoundingClientRect().top <= top ? s.path : acc),
@@ -131,4 +127,3 @@ export function useChapterView(store, hostRef, scrollerRef) {
 
   return { onScroll };
 }
-
