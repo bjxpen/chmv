@@ -104,10 +104,18 @@ document.addEventListener('click', function (e) {
 /* Auto-resize: report the iframe's content height to the parent so
  * the parent can size the .subframe wrapper. Without this, the iframe
  * has a fixed height and content gets clipped. Runs after load and
- * after any document.write (via MutationObserver). */
+ * after any document.write (via MutationObserver, debounced via rAF
+ * to avoid postMessage storms during rapid mutations). */
+var resizeRaf = 0;
 function reportHeight() {
-  var h = document.documentElement.scrollHeight || document.body.scrollHeight;
-  parent.postMessage({ source: MSG_SRC, type: 'resize', height: h }, '*');
+  if (resizeRaf) cancelAnimationFrame(resizeRaf);
+  resizeRaf = requestAnimationFrame(function () {
+    resizeRaf = 0;
+    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+    /* Guard against h=0 (before content is parsed) — sending 0 would
+     * collapse the iframe until the next non-zero height arrives. */
+    if (h > 0) parent.postMessage({ source: MSG_SRC, type: 'resize', height: h }, '*');
+  });
 }
 if (document.readyState === 'complete') reportHeight();
 else window.addEventListener('load', reportHeight);

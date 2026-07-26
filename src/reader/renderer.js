@@ -30,16 +30,21 @@ const LEGACY_PRESENTATION_ATTRS = [
   'width', 'height', 'hspace', 'vspace',
 ];
 
-/* --- Module constants (avoid magic strings scattered through the class) --- */
+/* --- Module constants (avoid magic strings/numbers scattered through the class) --- */
 const SUBFRAME_CLASS = 'subframe';
 const SUBFRAME_SELECTOR = `.${SUBFRAME_CLASS}`;
 const IFRAME_BLOB_PREFIX = '__iframe__:';
 const IFRAME_MSG_SOURCE = 'chmv-iframe';
-/* Resource attributes the renderer rewrites to blob: URLs. Used by
+/* Resource attributes the renderer rewrites to data: URLs. Used by
  * _collectResourceRefs, _rewriteStaticUrls, and the shim's rewriteHtml. */
 const RESOURCE_ATTRS = ['src', 'href', 'background', 'poster'];
 const RESOURCE_ATTR_SELECTOR = `[${RESOURCE_ATTRS.join('],[')}]`;
 
+/* Tunable limits (hoisted from magic numbers in method bodies). */
+const IDLE_POOL_BUDGET_BYTES = 12 * 1024 * 1024;
+const PREFETCH_CONCURRENCY = 8;
+const MAX_SUBFRAME_HEIGHT_PX = 2000;
+const RUNJS_BLOB_CACHE_LIMIT = 500; /* max entries in runJsBlobs to prevent memory exhaustion */
 
 /* Pre-computed sanitization selectors (avoid rebuilding on every _sanitize call). */
 const DROP_SELECTOR = [...DROP_TAGS].join(',');
@@ -61,19 +66,24 @@ export class Renderer {
     this.sectionBlobs = new Map();
     this.assetCache = new Map();
     this.idlePool = [];
-    this.idlePoolBudget = 12 * 1024 * 1024;
+    this.idlePoolBudget = IDLE_POOL_BUDGET_BYTES;
     this.idlePoolBytes = 0; /* running sum for O(1) trim checks */
     this.assetPending = new Map();
 
-    /* runJs sub-frame support: a map of CHM-internal path → blob URL
-     * covering every archive asset, built lazily on first runJs render.
-     * The sandboxed iframe can't resolve relative URLs against blob:, so
-     * we pre-build blob URLs for every asset and rewrite all references
-     * (static + dynamic via document.write) through a runtime shim. */
+    /* runJs sub-frame support: a map of CHM-internal path → data: URL
+     * (base64). Built lazily on first runJs render. Uses data: URLs
+     * (not blob:) because the sandboxed iframe is cross-origin on
+     * file:// and can't load parent-created blob: URLs. */
     this.runJsBlobs = null;
     this.runJsBlobsPending = new Map(); /* in-flight dedup (path → promise) */
     this._disposed = false;
-    this._lastNavSeq = 0; /* highest navigate seq seen (stale-msg suppression) */
+    /* Per-iframe nav seq tracking: Map<contentWindow, lastSeq>. Prevents
+     * stale navigations from unmounted iframes AND avoids the cross-iframe
+     * seq collision that a single counter caused. */
+    this._iframeNavSeqs = new Map();
+    /* Known iframe content windows — for e.source validation (security:
+     * reject postMessages from unknown sources). */
+    this._knownIframes = new Set();
 
     this.overrideStyles = true;
     this.runJs = false;
@@ -132,6 +142,11 @@ export class Renderer {
       for (const key of blobs) this._releaseAsset(key);
       this.sectionBlobs.delete(section);
     }
+    /* Clean up iframe tracking for this section's sub-frames. */
+    for (const ifr of section.querySelectorAll(`${SUBFRAME_SELECTOR} iframe`)) {
+      this._knownIframes.delete(ifr.contentWindow);
+      this._iframeNavSeqs.delete(ifr.contentWindow);
+    }
     if (section._divider) section._divider.remove();
     section.remove();
   }
@@ -151,11 +166,11 @@ export class Renderer {
     this.idlePool.length = 0;
     this.idlePoolBytes = 0;
     this.assetPending.clear();
-    /* runJsBlobs now contains data: URLs (not blob:) — no revocation
-     * needed. Just drop the map. */
+    /* runJsBlobs contains data: URLs — no revocation needed. */
     this.runJsBlobs = null;
     this.runJsBlobsPending.clear();
-    this._lastNavSeq = 0;
+    this._iframeNavSeqs.clear();
+    this._knownIframes.clear();
     /* Note: we intentionally do NOT remove the shadow 'click' or window
      * 'message' listeners here — they are cheap and the test suite reuses
      * a renderer after dispose(). In production dispose() is final, so
@@ -329,7 +344,28 @@ export class Renderer {
      * the .css file against blob: and 404. Inline <style> tags already
      * carry their css. */
     const resolved = await this._resolveStyleTexts(subFragment.styleTexts, blobs);
-    const styleTags = resolved.map((r) => `<style>${r.css}</style>`);
+    /* P0-1 fix: _resolveStyleTexts → _rewriteCss → _acquireAsset produces
+     * blob: URLs, but the cross-origin iframe can't load parent blob: URLs.
+     * Replace every blob: URL in the CSS with a data: URL. The blob: URL
+     * was created by _acquireAsset; find its path in assetCache, then
+     * fetch the data: URL via _getDataUrlForPath (cached). */
+    const styleTags = [];
+    for (const r of resolved) {
+      let css = r.css;
+      const blobUrls = css.match(/blob:[^"')\s]+/g) || [];
+      for (const blobUrl of [...new Set(blobUrls)]) {
+        /* Find the path for this blob URL in assetCache. */
+        let path = null;
+        for (const [key, rec] of this.assetCache) {
+          if (rec.url === blobUrl) { path = key; break; }
+        }
+        if (path) {
+          const dataUrl = await this._getDataUrlForPath(path);
+          if (dataUrl) css = css.split(blobUrl).join(dataUrl);
+        }
+      }
+      styleTags.push(`<style>${css}</style>`);
+    }
     /* The runtime shim must be the FIRST <script> so it overrides
      * document.write before any legacy script calls it. */
     const shim = this._buildRunJsShim(target);
@@ -360,6 +396,12 @@ export class Renderer {
     blobs.add(iframeBlobKey);
     this.assetCache.set(iframeBlobKey, { url: blobUrl, refs: 1, size: htmlDoc.length });
     wrapper.appendChild(iframe);
+    /* Register the iframe's content window once it loads, so
+     * _onIframeMessage can validate e.source against known iframes
+     * (security: reject postMessages from unknown sources). */
+    iframe.addEventListener('load', () => {
+      try { this._knownIframes.add(iframe.contentWindow); } catch { /* cross-origin */ }
+    });
     /* Note: do NOT push subFragment.styleTexts to the parent —
      * sub-frame CSS is already inlined into the iframe's <head>.
      * Pushing it would duplicate the CSS in the main shadow DOM
@@ -455,48 +497,42 @@ export class Renderer {
   }
 
   /**
-   * Lazily fetch a single CHM asset and cache its blob URL. The cache
-   * (this.runJsBlobs, path → blob URL) persists across chapters and is
-   * revoked on dispose, so repeated references to the same asset only
-   * hit the worker once.
+   * Lazily fetch a single CHM asset and cache its data: URL (base64).
+   * Uses data: URLs (not blob:) because the sandboxed iframe is cross-
+   * origin on file:// (origin "null") and can't load parent-created
+   * blob: URLs. Data URLs are self-contained and work cross-origin.
+   * Cached in this.runJsBlobs (reused across chapters; no revocation
+   * needed for data: URLs). Returns null on miss/dispose.
    *
-   * This replaces the earlier "pre-build all entries" approach: instead
-   * of materialising the whole archive as blobs (100 MB+ books would
-   * spike memory), we only fetch what the current page actually
-   * references — static resources (img/background/href), and .txt
-   * chapter files discovered by parsing pages[] from the inlined
-   * page.js. The shim's BLOBS map is populated from this cache.
+   * Cache is capped at RUNJS_BLOB_CACHE_LIMIT entries to prevent a
+   * chatty sub-frame from exhausting memory via request-blob spam.
    */
-  /**
-   * Lazily fetch a single CHM asset and cache its data URL. Uses data:
-   * URLs (not blob:) because the sandboxed iframe is cross-origin on
-   * file:// (origin "null") and can't load parent-created blob: URLs.
-   * Data URLs are self-contained and work cross-origin. Cached in
-   * this.runJsBlobs (reused across chapters, but NOT revoked — data
-   * URLs don't need revocation). Returns null on miss/dispose.
-   */
-  async _getBlobForPath(path) {
+  async _getDataUrlForPath(path) {
     if (!path || this._disposed) return null;
     const key = path.toLowerCase();
     if (this.runJsBlobs?.has(key)) return this.runJsBlobs.get(key);
-    /* In-flight dedup: if two concurrent callers request the same path
-     * (e.g. _prefetchRunJsBlobs running while a shim request-blob arrives),
-     * share a single fetch+encode. Without this, the loser's URL would
-     * be overwritten in the map. */
+    /* In-flight dedup: concurrent callers share a single fetch+encode. */
     let p = this.runJsBlobsPending.get(key);
     if (!p) {
       p = (async () => {
         const asset = await this._fetchRaw(path);
         if (this._disposed || !asset) return null;
         if (!this.runJsBlobs) this.runJsBlobs = new Map();
-        /* Use data: URL (not blob:) because the sandboxed iframe is
-         * cross-origin on file:// and can't load parent blob: URLs.
-         * data: URLs are base64-encoded — ~33% larger, but work
-         * cross-origin and need no revocation. */
+        /* Cap cache size (LRU-lite: drop oldest entry when at limit). */
+        if (this.runJsBlobs.size >= RUNJS_BLOB_CACHE_LIMIT) {
+          const firstKey = this.runJsBlobs.keys().next().value;
+          this.runJsBlobs.delete(firstKey);
+        }
         const bytes = new Uint8Array(asset.buffer);
         const mime = asset.mime || mimeFor(path);
+        /* Chunked base64 encoding: building a 10 MB binary string char-
+         * by-char is O(n²) in V8. Process in 32 KB chunks via
+         * String.fromCharCode.apply for ~10x speedup on large assets. */
+        const CHUNK = 0x8000;
         let binary = '';
-        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        for (let i = 0; i < bytes.length; i += CHUNK) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+        }
         const url = `data:${mime};base64,${globalThis.btoa(binary)}`;
         this.runJsBlobs.set(key, url);
         return url;
@@ -550,12 +586,11 @@ export class Renderer {
     }
     /* fetch in bounded parallelism (8 at a time) */
     const arr = [...paths];
-    const CONCURRENCY = 8;
     let next = 0;
-    const workers = Array.from({ length: Math.min(CONCURRENCY, arr.length) }, async () => {
+    const workers = Array.from({ length: Math.min(PREFETCH_CONCURRENCY, arr.length) }, async () => {
       while (next < arr.length) {
         const p = arr[next++];
-        await this._getBlobForPath(p);
+        await this._getDataUrlForPath(p);
       }
     });
     await Promise.all(workers);
@@ -584,23 +619,30 @@ export class Renderer {
     return `<script>${filled}</script>`;
   }
 
-  /** Route chmv-iframe messages: navigate requests go to onNavigate,
-   *  request-blob (shim cache miss) triggers a lazy fetch+cache and
-   *  sends the blob URL back to the iframe via response-blob so
-   *  subsequent document.write calls find it locally. */
+  /** Route chmv-iframe messages. Validates e.source against known
+   *  iframe windows (security), tracks nav seq per-iframe (avoids
+   *  cross-iframe seq collision), and handles resize for ALL subframe
+   *  iframes in a section (not just the first). */
   _onIframeMessage(e) {
     const d = e.data;
     if (!d || d.source !== IFRAME_MSG_SOURCE) return;
+    /* Security: only accept messages from iframes we created. */
+    if (!e.source || !this._knownIframes.has(e.source)) return;
+
     if (d.type === 'navigate') {
+      /* Per-iframe seq tracking: each iframe has its own counter.
+       * This avoids the cross-iframe seq collision where iframe B's
+       * seq:1 was rejected because iframe A already sent seq:1. */
       if (typeof d.seq === 'number') {
-        if (d.seq <= this._lastNavSeq) return;
-        this._lastNavSeq = d.seq;
+        const lastSeq = this._iframeNavSeqs.get(e.source) || 0;
+        if (d.seq <= lastSeq) return;
+        this._iframeNavSeqs.set(e.source, d.seq);
       }
       if (this.hooks.onNavigate && d.path) {
         this.hooks.onNavigate(d.path, '');
       }
     } else if (d.type === 'request-blob' && d.path) {
-      this._getBlobForPath(d.path).then((url) => {
+      this._getDataUrlForPath(d.path).then((url) => {
         if (url && e.source) {
           e.source.postMessage({
             source: 'chmv-parent', type: 'response-blob',
@@ -608,19 +650,21 @@ export class Renderer {
           }, '*');
         }
       }).catch(() => {});
-    } else if (d.type === 'resize' && typeof d.height === 'number') {
-      /* Auto-resize: the shim reports its content height so we can
-       * size the .subframe wrapper. Find the iframe that sent this
-       * message and set its wrapper height. */
+    } else if (d.type === 'resize' && typeof d.height === 'number' && d.height > 0) {
+      /* Auto-resize: find the iframe that sent this message by matching
+       * contentWindow. Iterate ALL subframe iframes in ALL sections —
+       * a section may contain multiple sub-frames (e.g. framesets). */
+      const h = Math.min(d.height, MAX_SUBFRAME_HEIGHT_PX);
       for (const section of this.sectionBlobs.keys()) {
-        const ifr = section.querySelector('.subframe iframe');
-        if (ifr && ifr.contentWindow === e.source) {
-          const wrapper = ifr.closest('.subframe');
-          if (wrapper) {
-            wrapper.style.height = `${Math.min(d.height, 2000)}px`;
-            ifr.style.height = `${Math.min(d.height, 2000)}px`;
+        for (const ifr of section.querySelectorAll(`${SUBFRAME_SELECTOR} iframe`)) {
+          if (ifr.contentWindow === e.source) {
+            const wrapper = ifr.closest(SUBFRAME_SELECTOR);
+            if (wrapper) {
+              wrapper.style.height = `${h}px`;
+              ifr.style.height = `${h}px`;
+            }
+            return;
           }
-          break;
         }
       }
     }
@@ -631,8 +675,7 @@ export class Renderer {
    * sub-frame fragment to cached data: URLs. Mirrors what the runtime
    * shim does for dynamic document.write output, but for the initial
    * HTML that the iframe parses directly. Also projects legacy
-   * background= attributes onto inline style (since the HTML attribute
-   * alone doesn't render in modern browsers).
+   * background= attributes onto inline style via _projectBackground.
    */
   _rewriteStaticUrls(rootEl, basePath) {
     if (!this.runJsBlobs) return;
@@ -645,16 +688,21 @@ export class Renderer {
         const url = p && this.runJsBlobs.get(p.toLowerCase());
         if (!url) continue;
         if (attr === 'background') {
-          /* Legacy background= attribute: project onto inline style
-           * (the HTML attribute alone doesn't render in modern browsers). */
-          el.removeAttribute('background');
-          const existing = el.getAttribute('style') || '';
-          el.setAttribute('style', `${existing}background-image:url("${url}");`.trimStart());
+          this._projectBackground(el, url);
         } else {
           el.setAttribute(attr, url);
         }
       }
     }
+  }
+
+  /** Project a legacy background= attribute onto the element's inline
+   *  style as background-image:url(...). Uses CSSStyleDeclaration
+   *  (not string concat) to avoid corrupting an existing style value
+   *  that lacks a trailing semicolon. Removes the background= attr. */
+  _projectBackground(el, url) {
+    el.style.setProperty('background-image', `url("${url}")`);
+    el.removeAttribute('background');
   }
 
   async _processScripts(rootEl, basePath) {
@@ -673,11 +721,14 @@ export class Renderer {
             if (p) {
               const asset = await this._fetchRaw(p);
               if (asset) {
-                /* Use the book's encoding (e.g. GBK for CJK CHMs), not
-                 * UTF-8 — legacy .js files like page.js are GBK-encoded
-                 * and contain CJK string literals (pages[] array). */
-                inlinedText = decodeBytes(new Uint8Array(asset.buffer),
-                  this.encodingOverride || this.bookEncoding);
+                /* Use effectiveEncoding (sniffs meta-charset, BOM, UTF-8
+                 * validity) — not just bookEncoding — because individual
+                 * .js files may have a different encoding than the book's
+                 * detected default. Legacy CJK .js files (page.js) are
+                 * typically GBK-encoded with CJK string literals. */
+                const jsBytes = new Uint8Array(asset.buffer);
+                inlinedText = decodeBytes(jsBytes,
+                  effectiveEncoding(jsBytes, this.encodingOverride, this.bookEncoding));
                 srcResolved = true;
                 continue;
               }
@@ -723,7 +774,7 @@ export class Renderer {
    */
   async _resolveAssets(rootEl, docPath, blobs, allowScripts = false) {
     const jobs = [];
-    const inSubframe = (el) => el.closest && el.closest(SUBFRAME_SELECTOR) !== null;
+    const inSubframe = (el) => el.closest(SUBFRAME_SELECTOR) !== null;
 
     if (!allowScripts) {
       for (const img of rootEl.querySelectorAll('img[src], input[type="image"][src]')) {
@@ -746,6 +797,7 @@ export class Renderer {
 
       if (!this.overrideStyles) {
         for (const el of rootEl.querySelectorAll('[style*="url(" i]')) {
+          if (inSubframe(el)) continue;
           const style = el.getAttribute('style') || '';
           jobs.push(
             this._rewriteCss(style, docPath, blobs, 2).then((rew) => {
@@ -754,11 +806,8 @@ export class Renderer {
           );
         }
         /* Legacy `background="images/foo.jpg"` attribute on <body>/<table>/
-         * <td> — extremely common in 2000s-era CJK CHMs (e.g. 搜书吧 novel
-         * templates). Resolve to a blob URL and project onto the element's
-         * inline style, since the `background` HTML attribute has no
-         * DOM-property equivalent and would otherwise 404 against the
-         * sub-frame's blob:/about:srcdoc base. */
+         * <td> — extremely common in 2000s-era CJK CHMs. Resolve to a blob
+         * URL and project onto inline style via _projectBackground. */
         for (const el of rootEl.querySelectorAll('[background]')) {
           if (inSubframe(el)) continue;
           const bg = el.getAttribute('background');
@@ -768,10 +817,7 @@ export class Renderer {
           el.removeAttribute('background');
           jobs.push(
             this._acquireAsset(assetPath, blobs).then((url) => {
-              if (url) {
-                const existing = el.getAttribute('style') || '';
-                el.setAttribute('style', `${existing}background-image:url("${url}");`.trimStart());
-              }
+              if (url) this._projectBackground(el, url);
             }),
           );
         }

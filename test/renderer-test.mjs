@@ -278,31 +278,55 @@ ok(hijackDataRefs > 0,
 ok(/__chmvNavigate\(/.test(hijackText),
   'renderer: runJs document.location calls rewritten to __chmvNavigate');
 /* navigation postMessage routes to onNavigate. The seq counter is now
- * per-Renderer (_lastNavSeq), not on window — reset it for the test. */
-hijackRenderer._lastNavSeq = 0;
+ * per-iframe (_iframeNavSeqs Map). The _onIframeMessage handler
+ * validates e.source against _knownIframes, so we must add a fake
+ * source window to the set before dispatching. */
+const fakeIframeWindow = { __fake: true };
+hijackRenderer._knownIframes.add(fakeIframeWindow);
 hijackRenderer._onIframeMessage({
+  source: fakeIframeWindow,
   data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/chapter.htm', seq: 1 },
 });
 ok(hijackNavigated.length === 1 && hijackNavigated[0].path === '/index1/chapter.htm',
   `renderer: runJs navigation postMessage routed to onNavigate (${JSON.stringify(hijackNavigated)})`);
-/* stale navigation (old seq) ignored */
+/* stale navigation (old seq from same iframe) ignored */
 hijackRenderer._onIframeMessage({
+  source: fakeIframeWindow,
   data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/volume.htm', seq: 0 },
 });
 ok(hijackNavigated.length === 1,
   'renderer: runJs stale navigation (old seq) ignored');
 /* non-chmv messages ignored */
 hijackRenderer._onIframeMessage({
+  source: fakeIframeWindow,
   data: { source: 'other', type: 'navigate', path: '/x', seq: 99 },
 });
 ok(hijackNavigated.length === 1,
   'renderer: runJs non-chmv messages ignored');
-/* request-blob message warms the cache for a path not yet seen */
+/* messages from unknown sources (security) ignored */
+hijackRenderer._onIframeMessage({
+  source: { __unknown: true },
+  data: { source: 'chmv-iframe', type: 'navigate', path: '/evil', seq: 100 },
+});
+ok(hijackNavigated.length === 1,
+  'renderer: runJs messages from unknown iframe sources ignored (security)');
+/* second iframe gets its own seq counter (no cross-iframe collision) */
+const fakeIframeWindow2 = { __fake2: true };
+hijackRenderer._knownIframes.add(fakeIframeWindow2);
+hijackRenderer._onIframeMessage({
+  source: fakeIframeWindow2,
+  data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/readall.htm', seq: 1 },
+});
+ok(hijackNavigated.length === 2 && hijackNavigated[1].path === '/index1/readall.htm',
+  `renderer: runJs second iframe nav not blocked by first iframe seq (${JSON.stringify(hijackNavigated)})`);
+/* request-blob message warms the cache for a path not yet seen.
+ * Must use a known iframe source (security validation). */
 const beforeMiss = hijackRenderer.runJsBlobs.size;
 const missPath = '/index1/chapter.htm'; /* not referenced by index.htm */
 ok(!hijackRenderer.runJsBlobs.has(missPath),
   'renderer: runJs miss path not yet cached');
 hijackRenderer._onIframeMessage({
+  source: fakeIframeWindow,
   data: { source: 'chmv-iframe', type: 'request-blob', path: missPath },
 });
 /* wait a tick for the async fetch */
@@ -402,8 +426,8 @@ ok(nr('location.replace("x");') === '__chmvNavigate("x");',
   `nav: location.replace() call rewritten`);
 navRenderer.dispose();
 
-/* P0-6 regression: concurrent _getBlobForPath calls for the same path
- * must dedup — only one fetch, only one blob URL created. */
+/* P0-6 regression: concurrent _getDataUrlForPath calls for the same path
+ * must dedup — only one fetch, only one data URL created. */
 const dedupFetched = [];
 const dedupRenderer = new Renderer(win.document.createElement('div'), {
   fetchAsset: async (path) => {
@@ -416,14 +440,14 @@ const dedupRenderer = new Renderer(win.document.createElement('div'), {
 });
 dedupRenderer.setRunJs(true);
 const [u1, u2, u3] = await Promise.all([
-  dedupRenderer._getBlobForPath('/dedup.txt'),
-  dedupRenderer._getBlobForPath('/dedup.txt'),
-  dedupRenderer._getBlobForPath('/dedup.txt'),
+  dedupRenderer._getDataUrlForPath('/dedup.txt'),
+  dedupRenderer._getDataUrlForPath('/dedup.txt'),
+  dedupRenderer._getDataUrlForPath('/dedup.txt'),
 ]);
 ok(u1 === u2 && u2 === u3,
-  `nav: concurrent _getBlobForPath deduped (same URL: ${u1 === u2 && u2 === u3})`);
+  `nav: concurrent _getDataUrlForPath deduped (same URL: ${u1 === u2 && u2 === u3})`);
 ok(dedupFetched.filter((p) => p === '/dedup.txt').length === 1,
-  `nav: concurrent _getBlobForPath fetched once (fetched ${dedupFetched.filter((p) => p === '/dedup.txt').length} times)`);
+  `nav: concurrent _getDataUrlForPath fetched once (fetched ${dedupFetched.filter((p) => p === '/dedup.txt').length} times)`);
 dedupRenderer.dispose();
 
 done();
