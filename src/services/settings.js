@@ -39,7 +39,8 @@ export const DEFAULT_SETTINGS = {
   lineHeight: 1.9,
   letterSpacing: 0.02,   /* em */
   paraSpacing: 0.9,      /* em */
-  overrideStyles: true,
+  overrideStyles: false,
+  runJs: false,
   scrollMode: 'paged',   /* 'paged' | 'infinite' */
   sidebarWidth: 300,
   sidebarHidden: false,
