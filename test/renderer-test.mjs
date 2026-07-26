@@ -105,10 +105,12 @@ ok(s4.querySelector('.subframe')?.dataset.path === '/index1/volume.htm',
   'renderer: frameset frame inlined');
 ok(s4.querySelectorAll('frameset, frame').length === 0, 'renderer: no raw frameset residue');
 
-/* runJs mode: sub-frames must be sandboxed in a real <iframe srcdoc> that
- * survives _sanitize. Regression: 'iframe' is in DROP_TAGS, so without a
- * .subframe exemption the sandbox iframe was deleted and sub-frames never
- * actually ran. */
+/* runJs mode: sub-frames are sandboxed in a real <iframe src=blob:...>
+ * that survives _sanitize. Regression: 'iframe' is in DROP_TAGS, so
+ * without a .subframe exemption the sandbox iframe was deleted and
+ * sub-frames never actually ran. The iframe is loaded via a blob: URL
+ * (not srcdoc) so it gets a real same-origin URL and can synchronously
+ * resolve parent-created blob: asset URLs. */
 const jsRenderer = new Renderer(win.document.createElement('div'), {
   fetchAsset: async (path) => {
     const entry = chm.resolve(path);
@@ -131,18 +133,291 @@ ok(sandboxedIframe !== null && sandboxedIframe !== undefined,
   'renderer: runJs sandboxed iframe survives sanitization');
 ok(sandboxedIframe?.hasAttribute('sandbox'),
   'renderer: runJs sandboxed iframe keeps sandbox attribute');
-ok(sandboxedIframe?.hasAttribute('srcdoc'),
-  'renderer: runJs sandboxed iframe keeps srcdoc payload');
 ok((sandboxedIframe?.getAttribute('sandbox') || '').includes('allow-scripts'),
   'renderer: runJs sandboxed iframe allows scripts');
-/* the iframe's srcdoc must carry the sub-frame HTML (with scripts intact) */
-ok(/<script/i.test(sandboxedIframe?.getAttribute('srcdoc') || ''),
-  'renderer: runJs srcdoc carries sub-frame scripts');
-/* scripts belonging to the parent doc (not inside srcdoc) are still
- * preserved in runJs mode — i.e. dropTags.delete('script') is in effect */
-ok(s5.querySelectorAll('script').length >= 0,
-  'renderer: runJs parent scripts not blanket-stripped');
+/* iframe is loaded via blob: URL (not srcdoc) so the sub-frame gets a
+ * real same-origin URL. */
+const iframeSrc = sandboxedIframe?.getAttribute('src') || '';
+ok(iframeSrc.startsWith('blob:'),
+  `renderer: runJs iframe loaded via blob URL (got: ${iframeSrc.slice(0, 40)}...)`);
+ok(!sandboxedIframe?.hasAttribute('srcdoc'),
+  'renderer: runJs iframe uses blob src, not srcdoc');
+/* External <script src=...> in the sub-frame must be inlined into the
+ * blob document — otherwise the script 404s against blob: and globals
+ * like `pages` stay undefined (the novel.chm start-page regression). */
+const jsRenderer2 = new Renderer(win.document.createElement('div'), {
+  fetchAsset: async (path) => {
+    const entry = chm.resolve(path);
+    if (!entry) return { found: false };
+    const data = chm.retrieve(entry);
+    return { found: true, mime: 'text/html', buffer: data.buffer };
+  },
+  onNavigate: () => {},
+});
+jsRenderer2.setStyleOverride(true);
+jsRenderer2.setEncodings(book.encoding, null);
+jsRenderer2.setRunJs(true);
+const s5b = await jsRenderer2.renderChapter('/start.htm', startBytes);
+const iframe2 = s5b.querySelector('.subframe iframe');
+const blobUrl2 = iframe2?.getAttribute('src') || '';
+/* We can't read the blob's content cross-context in happy-dom, but we
+ * can fetch it back via the same mock createObjectURL counter — verify
+ * the iframe src is a blob URL we created. */
+ok(blobUrl2.startsWith('blob:mock/'),
+  'renderer: runJs iframe blob URL created via URL.createObjectURL');
+/* The page.js script (defines `pages`) must have been fetched & inlined
+ * — verify the fetch was attempted for /js/page.js. */
+const fetchedByJs = [];
+const jsRenderer3 = new Renderer(win.document.createElement('div'), {
+  fetchAsset: async (path) => {
+    fetchedByJs.push(path);
+    const entry = chm.resolve(path);
+    if (!entry) return { found: false };
+    const data = chm.retrieve(entry);
+    return { found: true, mime: 'text/html', buffer: data.buffer };
+  },
+  onNavigate: () => {},
+});
+jsRenderer3.setStyleOverride(true);
+jsRenderer3.setEncodings(book.encoding, null);
+jsRenderer3.setRunJs(true);
+await jsRenderer3.renderChapter('/start.htm', startBytes);
+ok(fetchedByJs.some((p) => p.toLowerCase() === '/js/page.js'),
+  `renderer: runJs sub-frame script src resolved & fetched (${fetchedByJs.join(',')})`);
+ok(fetchedByJs.some((p) => p.toLowerCase() === '/js/mb.js'),
+  `renderer: runJs sub-frame mb.js script resolved & fetched`);
 jsRenderer.dispose();
+jsRenderer2.dispose();
+jsRenderer3.dispose();
+
+/* runJs resource hijacking (lazy + cached): the renderer pre-fetches
+ * blob URLs only for assets the current sub-frame references (static
+ * resources + .txt chapter files discovered via pages[] parsing),
+ * caches them across chapters, and injects a runtime shim that
+ * rewrites all resource URLs (static + dynamic via document.write)
+ * and intercepts navigation. */
+const hijackBlobs = new Map();
+let hijackCreated = 0;
+const hijackOrigCreate = globalThis.URL.createObjectURL;
+globalThis.URL.createObjectURL = (b) => {
+  const url = `blob:hijack/${++hijackCreated}`;
+  hijackBlobs.set(url, b);
+  return url;
+};
+const hijackFetched = [];
+const hijackNavigated = [];
+const hijackRenderer = new Renderer(win.document.createElement('div'), {
+  fetchAsset: async (path) => {
+    hijackFetched.push(path);
+    const entry = chm.resolve(path);
+    if (!entry) return { found: false };
+    const data = chm.retrieve(entry);
+    return { found: true, mime: 'text/html', buffer: data.buffer };
+  },
+  onNavigate: (path, fragment) => hijackNavigated.push({ path, fragment }),
+});
+hijackRenderer.setStyleOverride(false);
+hijackRenderer.setEncodings(book.encoding, null);
+hijackRenderer.setRunJs(true);
+const sHijack = await hijackRenderer.renderChapter('/start.htm', startBytes);
+/* lazy blob map: only assets referenced by /index1/index.htm + .txt
+ * files from pages[] — NOT the whole archive. */
+ok(hijackRenderer.runJsBlobs !== null,
+  'renderer: runJs lazy blob map built');
+ok(hijackRenderer.runJsBlobs.size < chm.entries.length,
+  `renderer: runJs lazy map is smaller than full archive (${hijackRenderer.runJsBlobs.size} < ${chm.entries.length})`);
+ok(hijackRenderer.runJsBlobs.size > 5,
+  `renderer: runJs lazy map has page-relevant entries (${hijackRenderer.runJsBlobs.size})`);
+/* .txt chapter files from pages[] should be pre-fetched (the key
+ * use case: loadtxt(i) dynamically document.writes <script src=…txt>) */
+ok(hijackRenderer.runJsBlobs.has('/txt/01_1.txt'),
+  'renderer: runJs lazy map includes /txt/01_1.txt (from pages[] parsing)');
+ok(hijackRenderer.runJsBlobs.has('/txt/02_1.txt'),
+  'renderer: runJs lazy map includes /txt/02_1.txt (from pages[] parsing)');
+/* internal links (href=readall.htm) should be pre-fetched so the
+ * shim's click interceptor can resolve them */
+ok(hijackRenderer.runJsBlobs.has('/index1/readall.htm'),
+  'renderer: runJs lazy map includes /index1/readall.htm (internal link)');
+/* the whole archive should NOT be fetched (lazy, not eager) */
+ok(hijackFetched.length < chm.entries.length,
+  `renderer: runJs lazy fetches fewer than full archive (${hijackFetched.length} < ${chm.entries.length})`);
+/* shim is injected into the iframe blob */
+const hijackIframe = sHijack.querySelector('.subframe iframe');
+const hijackBlobUrl = hijackIframe?.getAttribute('src') || '';
+const hijackBlob = hijackBlobs.get(hijackBlobUrl);
+ok(hijackBlob, 'renderer: runJs iframe blob captured by mock');
+const hijackText = await hijackBlob.text();
+ok(/parent\.__chmvNavigate/.test(hijackText),
+  'renderer: runJs shim defines parent.__chmvNavigate');
+ok(/document\.write\s*=\s*function/.test(hijackText),
+  'renderer: runJs shim overrides document.write');
+ok(/addEventListener\(.click/.test(hijackText),
+  'renderer: runJs shim installs <a> click interceptor');
+ok(/BLOBS\s*=/.test(hijackText),
+  'renderer: runJs shim embeds blob map');
+ok(/request-blob/.test(hijackText),
+  'renderer: runJs shim has request-blob fallback for cache misses');
+/* The shim now reads parent.__chmvBlobs LIVE (no embedded snapshot),
+ * so the iframe HTML stays small. Verify the shim references the live
+ * global instead of an embedded JSON blob map. */
+ok(/parent\[.__chmvBlobs.\]/.test(hijackText) || /__chmvBlobs/.test(hijackText),
+  'renderer: runJs shim reads parent.__chmvBlobs live (no embedded snapshot)');
+ok(!/var BLOBS=\{[^}]{100,}/.test(hijackText),
+  'renderer: runJs shim does NOT embed a large JSON blob snapshot');
+/* static resource URLs rewritten to blob: in the iframe HTML */
+const hijackBlobRefs = (hijackText.match(/blob:hijack\/\d+/g) || []).length;
+ok(hijackBlobRefs > 0,
+  `renderer: runJs iframe HTML references blob URLs (${hijackBlobRefs})`);
+/* document.location = ... in inlined scripts rewritten to parent.__chmvNavigate */
+ok(/parent\.__chmvNavigate\(/.test(hijackText),
+  'renderer: runJs document.location calls rewritten to parent.__chmvNavigate');
+/* navigation postMessage routes to onNavigate */
+window.__chmvNavCounter = 0;
+hijackRenderer._onIframeMessage({
+  data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/chapter.htm', seq: 1 },
+});
+ok(hijackNavigated.length === 1 && hijackNavigated[0].path === '/index1/chapter.htm',
+  `renderer: runJs navigation postMessage routed to onNavigate (${JSON.stringify(hijackNavigated)})`);
+/* stale navigation (old seq) ignored */
+hijackRenderer._onIframeMessage({
+  data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/volume.htm', seq: 0 },
+});
+ok(hijackNavigated.length === 1,
+  'renderer: runJs stale navigation (old seq) ignored');
+/* non-chmv messages ignored */
+hijackRenderer._onIframeMessage({
+  data: { source: 'other', type: 'navigate', path: '/x', seq: 99 },
+});
+ok(hijackNavigated.length === 1,
+  'renderer: runJs non-chmv messages ignored');
+/* request-blob message warms the cache for a path not yet seen */
+const beforeMiss = hijackRenderer.runJsBlobs.size;
+const missPath = '/index1/chapter.htm'; /* not referenced by index.htm */
+ok(!hijackRenderer.runJsBlobs.has(missPath),
+  'renderer: runJs miss path not yet cached');
+hijackRenderer._onIframeMessage({
+  data: { source: 'chmv-iframe', type: 'request-blob', path: missPath },
+});
+/* wait a tick for the async fetch */
+await new Promise((r) => setTimeout(r, 50));
+ok(hijackRenderer.runJsBlobs.size > beforeMiss,
+  `renderer: runJs request-blob warms cache (${beforeMiss} -> ${hijackRenderer.runJsBlobs.size})`);
+ok(hijackRenderer.runJsBlobs.has(missPath),
+  'renderer: runJs request-blob cached the fetched asset');
+/* cache reuse: re-render the same chapter should NOT re-fetch
+ * already-cached .txt files / images — only the iframe blob + a
+ * few static assets get re-fetched. */
+const fetchesBeforeRerender = hijackFetched.length;
+await hijackRenderer.renderChapter('/start.htm', startBytes);
+ok(hijackFetched.length < fetchesBeforeRerender + 15,
+  `renderer: runJs cache reuses blobs across renders (${fetchesBeforeRerender} -> ${hijackFetched.length})`);
+globalThis.URL.createObjectURL = hijackOrigCreate;
+hijackRenderer.dispose();
+
+/* Legacy `background="images/foo.jpg"` attribute on <td>/<table>/<body>
+ * — common in 2000s CJK CHMs. Must be resolved to a blob URL and
+ * projected onto inline style, otherwise the URL 404s against the
+ * document base. */
+const bgDoc = new TextEncoder().encode(
+  '<html><body><table><tr>' +
+  '<td background="images/001.jpg">cell</td>' +
+  '<td background="images/011.jpg">cell2</td>' +
+  '</tr></table></body></html>');
+const bgFetched = [];
+const bgRenderer = new Renderer(win.document.createElement('div'), {
+  fetchAsset: async (path) => {
+    bgFetched.push(path);
+    if (/001\.jpg$/i.test(path)) {
+      return { found: true, mime: 'image/jpeg', buffer: new Uint8Array([1, 2, 3]).buffer };
+    }
+    return { found: false };
+  },
+  onNavigate: () => {},
+});
+bgRenderer.setStyleOverride(false);
+bgRenderer.setEncodings(book.encoding, null);
+const s6 = await bgRenderer.renderChapter('/bg/test.htm', bgDoc);
+const td1 = s6.querySelector('td:nth-child(1)');
+ok(td1 && !td1.hasAttribute('background'),
+  'renderer: legacy background attr removed after resolution');
+ok(/url\("blob:/.test(td1?.getAttribute('style') || ''),
+  'renderer: legacy background projected onto inline style as blob URL');
+ok(bgFetched.some((p) => p.toLowerCase() === '/bg/images/001.jpg'),
+  `renderer: legacy background asset fetched (${bgFetched.join(',')})`);
+bgRenderer.dispose();
+
+/* P0-9 regression: top-level scripts must NEVER execute in the host
+ * app's origin, even in runJs mode. Only sub-frame scripts run (inside
+ * the sandboxed iframe). */
+const topScriptDoc = new TextEncoder().encode(
+  '<html><head><script>var evil = 1;</script></head>' +
+  '<body><script src="evil.js"></script>text</body></html>');
+const topRenderer = new Renderer(win.document.createElement('div'), {
+  fetchAsset: async () => ({ found: false }),
+  onNavigate: () => {},
+});
+topRenderer.setStyleOverride(true);
+topRenderer.setRunJs(true);
+const sTop = await topRenderer.renderChapter('/top.htm', topScriptDoc);
+ok(sTop.querySelectorAll('script').length === 0,
+  'renderer: top-level scripts stripped even in runJs mode (security)');
+topRenderer.dispose();
+
+/* P0-1..P0-5 regression: the nav-rewrite tokenizer must handle string
+ * literals, comments, ==, balanced parens, and property accesses. */
+const navRenderer = new Renderer(win.document.createElement('div'), {
+  fetchAsset: async () => ({ found: false }),
+  onNavigate: () => {},
+});
+navRenderer.setRunJs(true);
+const nr = (src) => navRenderer._rewriteScriptNav(src);
+ok(nr('document.location.href = "x";') === 'parent.__chmvNavigate("x");',
+  `nav: document.location.href rewritten (${nr('document.location.href = "x";')})`);
+ok(nr('if (location.href == "x") {}') === 'if (location.href == "x") {}',
+  `nav: == not treated as assignment`);
+ok(nr('if (location.href === "x") {}') === 'if (location.href === "x") {}',
+  `nav: === not treated as assignment`);
+ok(nr('location.href = f("a","b");') === 'parent.__chmvNavigate(f("a","b"));',
+  `nav: function-call RHS with commas preserved`);
+ok(nr('var s = "location.href = \'x\'";') === 'var s = "location.href = \'x\'";',
+  `nav: string literal contents not rewritten`);
+ok(nr('// location.href = "x";\n') === '// location.href = "x";\n',
+  `nav: line comment not rewritten`);
+ok(nr('/* location.href = "x"; */') === '/* location.href = "x"; */',
+  `nav: block comment not rewritten`);
+ok(nr('obj.location = "x";') === 'obj.location = "x";',
+  `nav: obj.location (property access) not rewritten`);
+ok(nr('location.hash = "#foo";') === 'location.hash = "#foo";',
+  `nav: location.hash not rewritten`);
+ok(nr('location.assign("x");') === 'parent.__chmvNavigate("x");',
+  `nav: location.assign() call rewritten`);
+ok(nr('location.replace("x");') === 'parent.__chmvNavigate("x");',
+  `nav: location.replace() call rewritten`);
+navRenderer.dispose();
+
+/* P0-6 regression: concurrent _getBlobForPath calls for the same path
+ * must dedup — only one fetch, only one blob URL created. */
+const dedupFetched = [];
+const dedupRenderer = new Renderer(win.document.createElement('div'), {
+  fetchAsset: async (path) => {
+    dedupFetched.push(path);
+    /* small delay to maximize race window */
+    await new Promise((r) => setTimeout(r, 5));
+    return { found: true, mime: 'text/plain', buffer: new Uint8Array([1]).buffer };
+  },
+  onNavigate: () => {},
+});
+dedupRenderer.setRunJs(true);
+const [u1, u2, u3] = await Promise.all([
+  dedupRenderer._getBlobForPath('/dedup.txt'),
+  dedupRenderer._getBlobForPath('/dedup.txt'),
+  dedupRenderer._getBlobForPath('/dedup.txt'),
+]);
+ok(u1 === u2 && u2 === u3,
+  `nav: concurrent _getBlobForPath deduped (same URL: ${u1 === u2 && u2 === u3})`);
+ok(dedupFetched.filter((p) => p === '/dedup.txt').length === 1,
+  `nav: concurrent _getBlobForPath fetched once (fetched ${dedupFetched.filter((p) => p === '/dedup.txt').length} times)`);
+dedupRenderer.dispose();
 
 done();
 process.exit(process.exitCode || 0);

@@ -75,6 +75,18 @@ class ChmEngine {
     return { tocTree, indexList };
   }
 
+  /** List all archive entries (path + size + mime) for the renderer's
+   *  runJs pre-blob pass — needs to know every asset upfront so it can
+   *  build a path→blob map before the sandboxed iframe starts loading. */
+  listEntries() {
+    if (!this.#chm) return [];
+    return this.#chm.entries.map((e) => ({
+      path: e.path,
+      length: e.length,
+      mime: mimeFor(e.path),
+    }));
+  }
+
   dropCaches() {
     this.#chm?.dropCaches();
   }

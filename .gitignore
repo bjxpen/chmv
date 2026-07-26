@@ -1,5 +1,5 @@
 node_modules/
 dist/
-dist-singlepage/
+dist-standalone/
 dev-dist/
 *.local

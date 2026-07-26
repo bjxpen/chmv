@@ -394,6 +394,12 @@ export function createStore({ createEngine, library, hashFile }) {
     ? session.engine.get(path)
     : Promise.resolve({ found: false });
 
+  /* list all archive entries — used by the renderer's runJs pre-blob pass
+   * to build a path→blob map before sandboxed iframes start loading. */
+  const listEntries = () => session.engine
+    ? session.engine.listEntries()
+    : Promise.resolve([]);
+
   /* flush progress when the tab hides/closes */
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') saveProgress();
@@ -411,6 +417,6 @@ export function createStore({ createEngine, library, hashFile }) {
     openFile, navigateTo, gotoSibling, fetchSibling, switchEncoding,
     setVisiblePath, reopenFromShelf, removeFromShelf, goHome, refreshShelf,
     saveProgress, scheduleSave, notify, updateSettings,
-    tocLabelOf, connectView, fetchAsset,
+    tocLabelOf, connectView, fetchAsset, listEntries,
   };
 }
