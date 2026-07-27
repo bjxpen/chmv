@@ -133,6 +133,12 @@ export class Renderer {
       section._divider = div;
     }
     this.container.appendChild(section);
+    /* Initialize Sandcastle/DocFX tab UI: show the first language (C#)
+     * by default. The click handler (_onClick) handles tab switching
+     * via javascript: href interception. */
+    if (!this.runJs && section.querySelector('.CodeSnippetContainerTab')) {
+      this._initTabUI(section);
+    }
     return section;
   }
 
@@ -202,10 +208,22 @@ export class Renderer {
       }
     }
 
-    /* No _processScripts on the top-level section: scripts were stripped
-     * by _sanitize(allowScripts=false) and must never execute in the host
-     * app's origin. Sub-frame scripts are handled in _inlineFrames. */
     return section;
+  }
+
+  /** Initialize Sandcastle/DocFX code snippet tab UI: show the first
+   *  language (C#) by default. Tab switching is handled by _onClick
+   *  which intercepts javascript: hrefs and calls _setActiveTab. */
+  _initTabUI(section) {
+    const firstTab = section.querySelector('.CodeSnippetContainerTabFirst');
+    if (firstTab) {
+      const id = firstTab.id;
+      const cls = firstTab.className.match(/(\w+Tab)\b/);
+      if (id && cls) {
+        const lang = cls[1].replace('Tab', 'Code');
+        this._setActiveTab(section, 'CodeSnippetContainerCode', lang, id);
+      }
+    }
   }
 
   async _buildContent(path, raw, blobs, depth, allowScripts = false) {
@@ -296,8 +314,11 @@ export class Renderer {
 
   /** Build a sandboxed-iframe sub-frame for runJs mode: inline scripts,
    *  pre-fetch blob URLs, rewrite static URLs, inject the runtime shim,
-   *  serialize to a blob: URL, and return a .subframe > iframe wrapper. */
-  async _buildRunJsSubFrame(doc, target, asset, blobs, depth) {
+   *  serialize to a blob: URL, and return a .subframe > iframe wrapper.
+   *  @param {Object} parentState — saved parent.* properties from prior
+   *    navigations (e.g. {txt: 5}) — passed to the shim so the new
+   *    page's scripts can read parent.txt. */
+  async _buildRunJsSubFrame(doc, target, asset, blobs, depth, parentState = {}) {
     /* allowScripts=true: the sub-frame will be serialized into a
      * sandboxed iframe, so scripts survive sanitization. The
      * top-level section (depth 0) always gets allowScripts=false
@@ -368,7 +389,7 @@ export class Renderer {
     }
     /* The runtime shim must be the FIRST <script> so it overrides
      * document.write before any legacy script calls it. */
-    const shim = this._buildRunJsShim(target);
+    const shim = this._buildRunJsShim(target, parentState);
     /* <meta charset="utf-8"> is mandatory: the blob is UTF-8 bytes, but
      * without a charset declaration the browser may sniff a different
      * encoding (especially on file:// where there's no HTTP Content-Type
@@ -471,7 +492,11 @@ export class Renderer {
   }
 
   /** Strip dangerous attributes (on* event handlers, javascript: URLs)
-   *  and — in override-styles mode — legacy presentational attributes. */
+   *  and — in override-styles mode — legacy presentational attributes.
+   *  javascript: hrefs are LEFT INTACT (not converted to onclick) —
+   *  they're handled by _onClick which intercepts the click and
+   *  executes safe function calls. This avoids the problem of onclick
+   *  attributes calling undefined functions in shadow DOM. */
   _stripUnsafeAttributes(doc, allowScripts) {
     const walker = doc.createTreeWalker(doc.documentElement, NodeFilter.SHOW_ELEMENT);
     const els = [];
@@ -480,11 +505,19 @@ export class Renderer {
     for (const el of els) {
       for (const attr of [...el.attributes]) {
         const name = attr.name.toLowerCase();
-        if (!allowScripts && name.startsWith('on')) el.removeAttribute(attr.name);
-        else if ((name === 'href' || name === 'src' || name === 'action') &&
-                 /^\s*(javascript|vbscript|data:text\/html)/i.test(attr.value)) {
+        if (!allowScripts && name.startsWith('on')) {
+          el.removeAttribute(attr.name);
+        } else if ((name === 'href' || name === 'src' || name === 'action') &&
+                   /^\s*data:text\/html/i.test(attr.value)) {
           el.removeAttribute(attr.name);
         }
+        /* Note: javascript:/vbscript: hrefs are NOT stripped here.
+         * They're handled by _onClick which intercepts the click and
+         * executes safe function calls (e.g. setActiveTab) in the
+         * shadow DOM context. This is needed because:
+         * 1. Scripts in shadow DOM are inert — can't define setActiveTab
+         * 2. onclick attributes would call undefined setActiveTab
+         * 3. The click handler can define setActiveTab inline */
       }
       if (this.overrideStyles) {
         el.removeAttribute('style');
@@ -600,29 +633,27 @@ export class Renderer {
    * Build the runtime shim <script> for a runJs sub-frame. The shim
    * source lives in runjs-shim.js (imported as a string). Token-replaces
    * the placeholders: embeds the BLOBS map as JSON (snapshot of
-   * currently-cached blob URLs), the base path, and the message source.
-   *
-   * The BLOBS map is embedded (not read live from parent) because on
-   * file:// the blob: URL iframe has origin "null" and can't access
-   * parent.* — see runjs-shim.js header for details. Cache misses send
-   * a request-blob postMessage; the parent fetches + sends back a
-   * response-blob message that the shim merges into its local BLOBS.
+   * currently-cached data URLs), the base path, the message source,
+   * and the parent state (saved parent.* properties from prior
+   * navigations, e.g. parent.txt).
    */
-  _buildRunJsShim(basePath) {
+  _buildRunJsShim(basePath, parentState = {}) {
     const blobsJson = this.runJsBlobs
       ? JSON.stringify(Object.fromEntries(this.runJsBlobs))
       : '{}';
     const filled = shimSource
       .replaceAll('__BLOBS_JSON__', blobsJson)
       .replaceAll('__BASE_PATH_JSON__', JSON.stringify(basePath))
-      .replaceAll('__IFRAME_MSG_SOURCE__', IFRAME_MSG_SOURCE);
+      .replaceAll('__IFRAME_MSG_SOURCE__', IFRAME_MSG_SOURCE)
+      .replaceAll('__PARENT_STATE_JSON__', JSON.stringify(parentState));
     return `<script>${filled}</script>`;
   }
 
   /** Route chmv-iframe messages. Validates e.source against known
    *  iframe windows (security), tracks nav seq per-iframe (avoids
-   *  cross-iframe seq collision), and handles resize for ALL subframe
-   *  iframes in a section (not just the first). */
+   *  cross-iframe seq collision), handles resize for ALL subframe
+   *  iframes, and re-renders sub-frames on internal navigation
+   *  (preserving parent.* state like parent.txt). */
   _onIframeMessage(e) {
     const d = e.data;
     if (!d || d.source !== IFRAME_MSG_SOURCE) return;
@@ -630,16 +661,19 @@ export class Renderer {
     if (!e.source || !this._knownIframes.has(e.source)) return;
 
     if (d.type === 'navigate') {
-      /* Per-iframe seq tracking: each iframe has its own counter.
-       * This avoids the cross-iframe seq collision where iframe B's
-       * seq:1 was rejected because iframe A already sent seq:1. */
       if (typeof d.seq === 'number') {
         const lastSeq = this._iframeNavSeqs.get(e.source) || 0;
         if (d.seq <= lastSeq) return;
         this._iframeNavSeqs.set(e.source, d.seq);
       }
-      if (this.hooks.onNavigate && d.path) {
-        this.hooks.onNavigate(d.path, '');
+      /* Re-render the sub-frame with the new path AND update the
+       * store's currentPath (for sidebar highlight + progress save)
+       * WITHOUT triggering a full re-render (which would destroy
+       * the iframe). _navigateSubFrame handles the iframe content
+       * swap; onPathChange just updates the store state. */
+      if (d.path) {
+        if (this.hooks.onPathChange) this.hooks.onPathChange(d.path);
+        this._navigateSubFrame(e.source, d.path, d.state || {});
       }
     } else if (d.type === 'request-blob' && d.path) {
       this._getDataUrlForPath(d.path).then((url) => {
@@ -651,9 +685,6 @@ export class Renderer {
         }
       }).catch(() => {});
     } else if (d.type === 'resize' && typeof d.height === 'number' && d.height > 0) {
-      /* Auto-resize: find the iframe that sent this message by matching
-       * contentWindow. Iterate ALL subframe iframes in ALL sections —
-       * a section may contain multiple sub-frames (e.g. framesets). */
       const h = Math.min(d.height, MAX_SUBFRAME_HEIGHT_PX);
       for (const section of this.sectionBlobs.keys()) {
         for (const ifr of section.querySelectorAll(`${SUBFRAME_SELECTOR} iframe`)) {
@@ -665,6 +696,36 @@ export class Renderer {
             }
             return;
           }
+        }
+      }
+    }
+  }
+
+  /** Re-render a sub-frame with a new CHM path, preserving parent
+   *  state (parent.txt, parent.document.title, etc.). Finds the
+   *  iframe by contentWindow, rebuilds its content, and swaps the
+   *  iframe's src to the new blob URL. */
+  async _navigateSubFrame(sourceWindow, path, parentState) {
+    for (const section of this.sectionBlobs.keys()) {
+      for (const wrapper of section.querySelectorAll(SUBFRAME_SELECTOR)) {
+        const ifr = wrapper.querySelector('iframe');
+        if (ifr && ifr.contentWindow === sourceWindow) {
+          /* Revoke the old iframe blob URL. */
+          const oldKey = `${IFRAME_BLOB_PREFIX}${ifr.src}`;
+          this._releaseAsset(oldKey);
+          /* Build the new sub-frame content. */
+          const newWrapper = await this._buildRunJsSubFrame(
+            wrapper.ownerDocument, path, await this._fetchRaw(path), new Set(), 0, parentState);
+          if (newWrapper) {
+            /* Copy the new iframe into the old wrapper (preserve position). */
+            const newIframe = newWrapper.querySelector('iframe');
+            ifr.replaceWith(newIframe);
+            /* Register the new iframe's content window. */
+            newIframe.addEventListener('load', () => {
+              try { this._knownIframes.add(newIframe.contentWindow); } catch { /* cross-origin */ }
+            });
+          }
+          return;
         }
       }
     }
@@ -984,19 +1045,93 @@ export class Renderer {
   }
 
   _onClick(event) {
-    const a = event.target.closest ? event.target.closest('a[data-internal-href]') : null;
+    const a = event.target.closest ? event.target.closest('a[href]') : null;
     if (!a) return;
+    const href = a.getAttribute('href');
+    if (!href) return;
+
+    /* Handle javascript: hrefs (common in Sandcastle/DocFX CHMs for
+     * code snippet tab switching). Execute safe function calls in the
+     * shadow DOM context. This is needed because:
+     * 1. The browser would try to navigate to javascript:... which
+     *    doesn't work in shadow DOM
+     * 2. setActiveTab and similar functions aren't defined (scripts
+     *    in shadow DOM are inert)
+     * We implement known-safe functions inline. */
+    if (/^javascript:/i.test(href)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this._execJsHref(a, href);
+      return;
+    }
+
+    /* Internal link navigation */
+    if (!a.dataset.internalHref) return;
     event.preventDefault();
     event.stopPropagation();
-    const href = a.dataset.internalHref;
+    const internalHref = a.dataset.internalHref;
     const base = a.dataset.internalBase || '/';
-    const fragment = fragmentOf(href);
-    const path = normalizePath(base, href);
+    const fragment = fragmentOf(internalHref);
+    const path = normalizePath(base, internalHref);
     if (!path || path === '/') {
       if (fragment) this.scrollToFragment(a.closest('section.doc'), fragment);
       return;
     }
     this.hooks.onNavigate(path, fragment);
+  }
+
+  /** Execute a javascript: href in the shadow DOM context. Implements
+   *  known-safe functions (setActiveTab, getElementsByClass) inline
+   *  since scripts in shadow DOM are inert. Generic pattern: parses
+   *  the function name + args from the javascript: URL and dispatches
+   *  to the appropriate handler. Unknown functions are silently ignored. */
+  _execJsHref(anchor, href) {
+    const code = href.replace(/^\s*javascript:\s*/i, '').replace(/;\s*$/, '');
+    const section = anchor.closest('section.doc') || anchor.getRootNode().host;
+
+    /* Parse function call: functionName('arg1','arg2','arg3') */
+    const m = code.match(/^(\w+)\s*\((.*)\)$/);
+    if (!m) return;
+    const fn = m[1];
+    const args = m[2].split(',').map((s) => s.trim().replace(/^['"]|['"]$/g, ''));
+
+    if (fn === 'setActiveTab' && args.length >= 3) {
+      this._setActiveTab(section, args[0], args[1], args[2]);
+    }
+    /* Add more known-safe functions here as needed. Unknown functions
+     * are silently ignored — this is a whitelist, not a JS evaluator. */
+  }
+
+  /** Sandcastle/DocFX setActiveTab implementation: show/hide code
+   *  blocks by class name + highlight the active tab. */
+  _setActiveTab(section, baseClass, activeClassName, activeTabId) {
+    const getElementsByClass = (searchClass) => {
+      const pattern = new RegExp(`(^|\\s)${searchClass}(\\s|$)`);
+      return [...section.querySelectorAll('*')].filter((e) => pattern.test(e.className));
+    };
+
+    /* Reset all tabs */
+    for (const t of getElementsByClass('CodeSnippetContainerTab')) {
+      t.style.backgroundColor = '#fff';
+      t.style.borderBottom = '1px solid #939393';
+    }
+    for (const t of getElementsByClass('CodeSnippetContainerTabFirst')) {
+      t.style.backgroundColor = '#fff';
+      t.style.borderBottom = '1px solid #939393';
+    }
+
+    /* Show/hide code blocks */
+    for (const d of getElementsByClass(baseClass)) {
+      const pattern = new RegExp(`(^|\\s)${activeClassName}(\\s|$)`);
+      d.style.display = pattern.test(d.className) ? 'block' : 'none';
+    }
+
+    /* Highlight active tab */
+    const e = section.querySelector(`#${activeTabId}`);
+    if (e) {
+      e.style.backgroundColor = 'white';
+      e.style.borderBottomColor = 'white';
+    }
   }
 
   scrollToFragment(section, fragment) {

@@ -21,6 +21,7 @@ export function useChapterView(store, hostRef, scrollerRef) {
       fetchAsset: (path) => store.fetchAsset(path),
       listEntries: () => store.listEntries(),
       onNavigate: (path, fragment) => store.navigateTo(path, { fragment }),
+      onPathChange: (path) => store.setCurrentPath(path),
     });
     renderer.setStyleOverride(store.settings.value.overrideStyles);
     renderer.setRunJs(store.settings.value.runJs);

@@ -357,6 +357,27 @@ export function createStore({ createEngine, library, hashFile }) {
     scheduleSave();
   };
 
+  /** Update currentPath + activeTocPath without re-rendering. Used by
+   *  the renderer when a runJs sub-frame navigates internally — the
+   *  iframe is already being re-rendered by _navigateSubFrame, so
+   *  we just need to update the sidebar highlight + save progress.
+   *  Only updates currentPath if the path is in the spine (avoids
+   *  breaking hasNext/hasPrev for paths like /index1/chapter.htm
+   *  that are sub-frame pages, not top-level chapters). */
+  const setCurrentPath = (path) => {
+    if (!path) return;
+    const inSpine = spineIndex.value.has(path.toLowerCase());
+    batch(() => {
+      /* Only change currentPath (which drives prev/next buttons) if
+       * the path is a top-level chapter in the spine. Sub-frame pages
+       * keep the original currentPath (e.g. /start.htm) so prev/next
+       * still work. activeTocPath is always updated for sidebar highlight. */
+      if (inSpine) currentPath.value = path;
+      activeTocPath.value = path;
+    });
+    scheduleSave();
+  };
+
   const reopenFromShelf = async (row, fallbackPicker) => {
     const handle = await library.getHandle(row.hash);
     if (handle) {
@@ -415,7 +436,7 @@ export function createStore({ createEngine, library, hashFile }) {
 
     /* actions */
     openFile, navigateTo, gotoSibling, fetchSibling, switchEncoding,
-    setVisiblePath, reopenFromShelf, removeFromShelf, goHome, refreshShelf,
+    setVisiblePath, setCurrentPath, reopenFromShelf, removeFromShelf, goHome, refreshShelf,
     saveProgress, scheduleSave, notify, updateSettings,
     tocLabelOf, connectView, fetchAsset, listEntries,
   };

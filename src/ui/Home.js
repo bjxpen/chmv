@@ -78,14 +78,23 @@ export const Home = ({ store }) => {
       e.preventDefault();
       depth = 0;
       setDragover(false);
+      /* On file:// Chrome blocks OS file drops — dataTransfer.files is
+       * empty even though the drop event fires. Detect this and show a
+       * helpful message instead of silently failing. */
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) {
+        if (location.protocol === 'file:') {
+          store.notify('Drag-and-drop is blocked on file:// — use "Choose file…" button instead.', 6000);
+        }
+        return;
+      }
       const item = e.dataTransfer?.items?.[0];
       let handle = null;
       if (item?.getAsFileSystemHandle) {
         try { handle = await item.getAsFileSystemHandle(); } catch { /* ignore */ }
         if (handle?.kind !== 'file') handle = null;
       }
-      const file = e.dataTransfer?.files?.[0];
-      if (file) openPicked(file, handle);
+      openPicked(files[0], handle);
     };
     window.addEventListener('dragenter', enter);
     window.addEventListener('dragleave', leave);

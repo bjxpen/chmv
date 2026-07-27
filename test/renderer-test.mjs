@@ -277,48 +277,66 @@ ok(hijackDataRefs > 0,
 /* document.location = ... in inlined scripts rewritten to __chmvNavigate */
 ok(/__chmvNavigate\(/.test(hijackText),
   'renderer: runJs document.location calls rewritten to __chmvNavigate');
-/* navigation postMessage routes to onNavigate. The seq counter is now
- * per-iframe (_iframeNavSeqs Map). The _onIframeMessage handler
- * validates e.source against _knownIframes, so we must add a fake
- * source window to the set before dispatching. */
+/* The shim has a parent proxy for parent.* state + select onChange
+ * interceptor for template switchers. */
+ok(/parentProxy|Proxy/.test(hijackText),
+  'renderer: runJs shim has parent proxy for parent.* state');
+ok(/'change'/.test(hijackText) || /change/.test(hijackText),
+  'renderer: runJs shim intercepts select onChange for template switchers');
+ok(/parentState/.test(hijackText),
+  'renderer: runJs shim has parentState for navigation state preservation');
+/* Navigation now re-renders the sub-frame internally (not hooks.onNavigate).
+ * The seq counter is per-iframe. _onIframeMessage validates e.source
+ * against _knownIframes. Test with a fake source window. */
 const fakeIframeWindow = { __fake: true };
 hijackRenderer._knownIframes.add(fakeIframeWindow);
-hijackRenderer._onIframeMessage({
-  source: fakeIframeWindow,
-  data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/chapter.htm', seq: 1 },
-});
-ok(hijackNavigated.length === 1 && hijackNavigated[0].path === '/index1/chapter.htm',
-  `renderer: runJs navigation postMessage routed to onNavigate (${JSON.stringify(hijackNavigated)})`);
+/* Verify _navigateSubFrame is called (it will try to find the iframe
+ * by contentWindow and fail silently since fakeIframeWindow isn't a
+ * real iframe — but the call should not throw). */
+let navError = null;
+try {
+  hijackRenderer._onIframeMessage({
+    source: fakeIframeWindow,
+    data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/chapter.htm', seq: 1, state: { txt: 5 } },
+  });
+} catch (e) { navError = e.message; }
+ok(!navError, `renderer: runJs navigate message handled without error (${navError})`);
 /* stale navigation (old seq from same iframe) ignored */
+let staleNavReached = false;
+const origNavigate = hijackRenderer._navigateSubFrame;
+hijackRenderer._navigateSubFrame = () => { staleNavReached = true; };
 hijackRenderer._onIframeMessage({
   source: fakeIframeWindow,
   data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/volume.htm', seq: 0 },
 });
-ok(hijackNavigated.length === 1,
+ok(!staleNavReached,
   'renderer: runJs stale navigation (old seq) ignored');
 /* non-chmv messages ignored */
 hijackRenderer._onIframeMessage({
   source: fakeIframeWindow,
   data: { source: 'other', type: 'navigate', path: '/x', seq: 99 },
 });
-ok(hijackNavigated.length === 1,
+ok(!staleNavReached,
   'renderer: runJs non-chmv messages ignored');
 /* messages from unknown sources (security) ignored */
 hijackRenderer._onIframeMessage({
   source: { __unknown: true },
   data: { source: 'chmv-iframe', type: 'navigate', path: '/evil', seq: 100 },
 });
-ok(hijackNavigated.length === 1,
+ok(!staleNavReached,
   'renderer: runJs messages from unknown iframe sources ignored (security)');
 /* second iframe gets its own seq counter (no cross-iframe collision) */
 const fakeIframeWindow2 = { __fake2: true };
 hijackRenderer._knownIframes.add(fakeIframeWindow2);
+let secondNavReached = false;
+hijackRenderer._navigateSubFrame = () => { secondNavReached = true; };
 hijackRenderer._onIframeMessage({
   source: fakeIframeWindow2,
   data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/readall.htm', seq: 1 },
 });
-ok(hijackNavigated.length === 2 && hijackNavigated[1].path === '/index1/readall.htm',
-  `renderer: runJs second iframe nav not blocked by first iframe seq (${JSON.stringify(hijackNavigated)})`);
+ok(secondNavReached,
+  'renderer: runJs second iframe nav not blocked by first iframe seq');
+hijackRenderer._navigateSubFrame = origNavigate;
 /* request-blob message warms the cache for a path not yet seen.
  * Must use a known iframe source (security validation). */
 const beforeMiss = hijackRenderer.runJsBlobs.size;

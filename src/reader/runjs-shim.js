@@ -9,17 +9,18 @@
  * communicates with the parent EXCLUSIVELY via postMessage, which works
  * cross-origin. No parent.* direct access anywhere.
  *
+ * NAVIGATION MODEL: when scripts call document.location = "chapter.htm"
+ * (rewritten by the nav-rewriter to __chmvNavigate("chapter.htm")), the
+ * shim sends a 'navigate' postMessage to the parent. The parent re-
+ * renders the sub-frame with the new page, preserving parent.* state
+ * (parent.txt, parent.document.title, etc.) that the shim captured via
+ * the parent proxy and sent via 'parent-state' messages.
+ *
  * Placeholders (token-replaced by _buildRunJsShim):
- *   __BLOBS_JSON__          — embedded path→blobURL map (snapshot)
+ *   __BLOBS_JSON__          — embedded path→dataURL map (snapshot)
  *   __BASE_PATH_JSON__      — JSON string of the sub-frame's CHM path
  *   __IFRAME_MSG_SOURCE__   — 'chmv-iframe' message source tag
- *
- * The BLOBS map is embedded (not read live from parent) because cross-
- * origin parent access is blocked. Cache misses fall back to the raw
- * URL + a request-blob postMessage that warms the parent's cache for
- * the NEXT render. An async response-blob message updates a local
- * BLOBS map so subsequent document.write calls in the SAME iframe
- * find the newly-fetched URL.
+ *   __PARENT_STATE_JSON__   — JSON object of saved parent.* properties
  */
 
 /* The shim source as a plain string (default export). */
@@ -27,6 +28,10 @@ export default `(function(){
 var BLOBS = __BLOBS_JSON__;
 var BASE = __BASE_PATH_JSON__;
 var MSG_SRC = '__IFRAME_MSG_SOURCE__';
+/* parentState: properties set by legacy scripts via parent.X = value
+ * (e.g. parent.txt = 5, parent.document.title = "..."). Sent to the
+ * parent on navigation so the next page's shim can restore them. */
+var parentState = __PARENT_STATE_JSON__ || {};
 
 function norm(base, href) {
   if (href == null) return null;
@@ -56,9 +61,6 @@ function resolve(href) {
   if (!p) return href;
   var k = p.toLowerCase();
   if (BLOBS[k]) return BLOBS[k];
-  /* cache miss — ask parent to warm its cache for next time. The
-   * current call falls back to the raw URL (will 404 against blob:,
-   * but legacy scripts usually tolerate that for non-critical assets). */
   parent.postMessage({ source: MSG_SRC, type: 'request-blob', path: p }, '*');
   return href;
 }
@@ -75,57 +77,121 @@ var _wl = Function.prototype.bind.call(document.writeln, document);
 document.write = function (s) { return _w(rewriteHtml(s)); };
 document.writeln = function (s) { return _wl(rewriteHtml(s)); };
 
-/* Navigation: pure postMessage, no parent.* access. The parent
- * tracks a seq counter to drop stale messages from unmounted iframes.
- * __chmvNavigate is exposed as a global so rewritten scripts (which
- * call __chmvNavigate(url) after the nav-rewriter transforms
- * document.location = url) can invoke it directly. */
+/* Parent proxy: legacy scripts do parent.txt = 5, parent.document.title
+ * = "...", etc. We capture these assignments in parentState and sync to
+ * the parent on navigation. Reads return the stored value. This makes
+ * parent.txt survive iframe-internal navigations (the parent passes
+ * parentState back to the next page's shim).
+ *
+ * CRITICAL: the shim itself calls parent.postMessage(...) for
+ * navigate/request-blob/resize messages. The proxy MUST delegate
+ * postMessage (and hasOwnProperty, etc.) to the real window.parent.
+ * The real parent is cross-origin but postMessage works cross-origin. */
+var realParent = window.parent;
+var parentProxy = new Proxy({}, {
+  get: function (_, prop) {
+    /* Delegate communication + introspection to the real parent. */
+    if (prop === 'postMessage') return function () { return realParent.postMessage.apply(realParent, arguments); };
+    if (prop === 'addEventListener') return function () { return realParent.addEventListener.apply(realParent, arguments); };
+    if (prop === 'removeEventListener') return function () { return realParent.removeEventListener.apply(realParent, arguments); };
+    if (prop === 'toString' || prop === Symbol.toPrimitive) return function () { return '[object Window]'; };
+    /* Delegate common parent.* reads that legacy scripts expect. */
+    if (prop === 'document') return document;
+    if (prop === 'window') return window;
+    if (prop === 'location') return window.location;
+    if (prop === 'navigator') return window.navigator;
+    return parentState[prop];
+  },
+  set: function (_, prop, value) {
+    parentState[prop] = value;
+    return true;
+  },
+  has: function (prop) {
+    return prop in parentState || prop in realParent;
+  },
+});
+/* Expose parent as a global so rewritten scripts can use it. Only set
+ * if not already defined (the real parent is cross-origin and throws). */
+try { Object.defineProperty(window, 'parent', { value: parentProxy, configurable: false, writable: false }); } catch (e) {}
+
+/* Navigation: tell the parent to re-render the sub-frame with the new
+ * page. The parent preserves parentState across navigations. */
 var navSeq = 0;
 function navigate(url) {
   navSeq++;
   var p = norm(BASE, String(url));
-  parent.postMessage({ source: MSG_SRC, type: 'navigate', path: p, seq: navSeq }, '*');
+  parent.postMessage({
+    source: MSG_SRC, type: 'navigate', path: p, seq: navSeq,
+    state: parentState,
+  }, '*');
 }
 window.__chmvNavigate = navigate;
 
+/* Click interceptor for <a href> internal links + javascript: links.
+ * For javascript: links, extract the function call and execute it
+ * in a try/catch. This makes javascript:loadurl(...) links work in
+ * the sandboxed iframe (they can't use the real javascript: protocol
+ * because the iframe is cross-origin). */
 document.addEventListener('click', function (e) {
   var a = e.target.closest && e.target.closest('a[href]');
   if (!a) return;
   var href = a.getAttribute('href');
   if (!href) return;
   if (/^(https?:|mailto:|ftp:|blob:|data:|#)/i.test(href)) return;
-  if (/^javascript:/i.test(href)) return;
+  if (/^javascript:/i.test(href)) {
+    /* Execute the javascript: code in the iframe's scope. This is safe
+     * because the iframe is sandboxed (allow-scripts only). */
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      var code = href.replace(/^javascript:/i, '').trim();
+      /* Use Function instead of eval to avoid strict-mode issues. */
+      new Function(code).call(window);
+    } catch (ex) { /* ignore errors from legacy scripts */ }
+    return false;
+  }
   e.preventDefault();
   e.stopPropagation();
   navigate(href);
   return false;
 }, true);
 
-/* Auto-resize: report the iframe's content height to the parent so
- * the parent can size the .subframe wrapper. Without this, the iframe
- * has a fixed height and content gets clipped. Runs after load and
- * after any document.write (via MutationObserver, debounced via rAF
- * to avoid postMessage storms during rapid mutations). */
+/* Intercept location.href = ... on <select> onChange (and any other
+ * element). Legacy templates use <select onChange='location.href=...'>
+ * for template switchers (e.g. mb.js's 模板选择). We can't intercept
+ * location.href directly (it's a native property), but we CAN intercept
+ * the change event on <select> elements and check if the handler would
+ * navigate. The nav-rewriter already rewrites location.href = X in
+ * inline handlers to __chmvNavigate(X). For dynamically-written <select>
+ * (via document.write), the onChange handler is a string that the shim
+ * can't rewrite — so we intercept the change event and parse the
+ * selected option's value as a URL. */
+document.addEventListener('change', function (e) {
+  if (e.target.tagName !== 'SELECT') return;
+  var val = e.target.value;
+  if (!val || /^(https?:|mailto:|ftp:|blob:|data:|#|javascript:)/i.test(val)) return;
+  e.preventDefault();
+  e.stopPropagation();
+  navigate(val);
+  return false;
+}, true);
+
+/* Auto-resize: report the iframe's content height to the parent. */
 var resizeRaf = 0;
 function reportHeight() {
   if (resizeRaf) cancelAnimationFrame(resizeRaf);
   resizeRaf = requestAnimationFrame(function () {
     resizeRaf = 0;
     var h = document.documentElement.scrollHeight || document.body.scrollHeight;
-    /* Guard against h=0 (before content is parsed) — sending 0 would
-     * collapse the iframe until the next non-zero height arrives. */
     if (h > 0) parent.postMessage({ source: MSG_SRC, type: 'resize', height: h }, '*');
   });
 }
 if (document.readyState === 'complete') reportHeight();
 else window.addEventListener('load', reportHeight);
-/* Also report after mutations (document.write may add content after load). */
 var mo = new MutationObserver(function () { reportHeight(); });
 mo.observe(document.documentElement, { childList: true, subtree: true });
 
-/* Receive response-blob messages from the parent: updates the local
- * BLOBS map so subsequent document.write calls find the newly-fetched
- * URL. Also handles parent-injected navigation if needed. */
+/* Receive messages from the parent. */
 window.addEventListener('message', function (e) {
   var d = e.data;
   if (!d || d.source !== 'chmv-parent') return;
