@@ -666,14 +666,15 @@ export class Renderer {
         if (d.seq <= lastSeq) return;
         this._iframeNavSeqs.set(e.source, d.seq);
       }
-      /* Re-render the sub-frame with the new path AND update the
-       * store's currentPath (for sidebar highlight + progress save)
-       * WITHOUT triggering a full re-render (which would destroy
-       * the iframe). _navigateSubFrame handles the iframe content
-       * swap; onPathChange just updates the store state. */
-      if (d.path) {
-        if (this.hooks.onPathChange) this.hooks.onPathChange(d.path);
-        this._navigateSubFrame(e.source, d.path, d.state || {});
+      /* Navigate the READER to the target page (top-level navigation).
+       * The shim resolves template pages (e.g. chapter.htm) to actual
+       * content files (e.g. /txt/02_2.txt) using the pages[] array,
+       * so the reader renders the chapter with correct GBK decoding
+       * + proper spine position (prev/next work). This replaces the
+       * old _navigateSubFrame approach which rendered inside the iframe
+       * (causing encoding issues + broken prev/next). */
+      if (d.path && this.hooks.onNavigate) {
+        this.hooks.onNavigate(d.path, '');
       }
     } else if (d.type === 'request-blob' && d.path) {
       this._getDataUrlForPath(d.path).then((url) => {

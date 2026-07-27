@@ -114,12 +114,40 @@ var parentProxy = new Proxy({}, {
  * if not already defined (the real parent is cross-origin and throws). */
 try { Object.defineProperty(window, 'parent', { value: parentProxy, configurable: false, writable: false }); } catch (e) {}
 
-/* Navigation: tell the parent to re-render the sub-frame with the new
- * page. The parent preserves parentState across navigations. */
+/* Navigation: tell the parent to navigate to a new page. The parent
+ * renders the page as a top-level chapter (correct encoding, proper
+ * prev/next, sidebar highlight).
+ *
+ * For 搜书吧-style novel CHMs: when loadurl('chapter.htm', num) is
+ * called, parent.txt is set to num, then navigate('chapter.htm') fires.
+ * chapter.htm is just a template that calls loadtxt(parent.txt) which
+ * loads /txt/<pages[num][0]>.txt. We short-circuit this: if parentState
+ * has a chapter index AND pages[] is defined, resolve directly to the
+ * .txt file path. This lets the reader render the chapter with correct
+ * GBK decoding + proper spine position, instead of rendering chapter.htm
+ * inside the iframe (which has encoding issues).
+ *
+ * This is generic for ALL CHMs that use the pages[] + loadurl + loadtxt
+ * pattern (the de facto standard for 2000s CJK novel CHMs). */
 var navSeq = 0;
 function navigate(url) {
   navSeq++;
   var p = norm(BASE, String(url));
+
+  /* Resolve template pages to actual content files. If parentState has
+   * a chapter index (parent.txt) and pages[] is defined, map the
+   * template page to the .txt file directly. This avoids rendering
+   * chapter.htm inside the iframe (which has encoding issues) and
+   * lets the reader handle the .txt file with proper GBK decoding. */
+  if (parentState.txt !== undefined && typeof pages !== 'undefined') {
+    var pageNum = parentState.txt;
+    if (pageNum >= 0 && pageNum < pages.length && pages[pageNum] && pages[pageNum][0]) {
+      var fileId = pages[pageNum][0];
+      var txtPath = norm(BASE, '../txt/' + fileId + '.txt');
+      if (txtPath) p = txtPath;
+    }
+  }
+
   parent.postMessage({
     source: MSG_SRC, type: 'navigate', path: p, seq: navSeq,
     state: parentState,

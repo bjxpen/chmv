@@ -285,58 +285,55 @@ ok(/'change'/.test(hijackText) || /change/.test(hijackText),
   'renderer: runJs shim intercepts select onChange for template switchers');
 ok(/parentState/.test(hijackText),
   'renderer: runJs shim has parentState for navigation state preservation');
-/* Navigation now re-renders the sub-frame internally (not hooks.onNavigate).
- * The seq counter is per-iframe. _onIframeMessage validates e.source
- * against _knownIframes. Test with a fake source window. */
+/* Navigation now calls hooks.onNavigate (top-level reader navigation).
+ * The shim resolves template pages (chapter.htm) to .txt files via
+ * pages[], so the reader renders the actual chapter with correct
+ * encoding + spine position. The seq counter is per-iframe.
+ * _onIframeMessage validates e.source against _knownIframes. */
 const fakeIframeWindow = { __fake: true };
 hijackRenderer._knownIframes.add(fakeIframeWindow);
-/* Verify _navigateSubFrame is called (it will try to find the iframe
- * by contentWindow and fail silently since fakeIframeWindow isn't a
- * real iframe — but the call should not throw). */
+/* Verify onNavigate is called (top-level navigation). */
 let navError = null;
 try {
   hijackRenderer._onIframeMessage({
     source: fakeIframeWindow,
-    data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/chapter.htm', seq: 1, state: { txt: 5 } },
+    data: { source: 'chmv-iframe', type: 'navigate', path: '/txt/02_2.txt', seq: 1, state: { txt: 5 } },
   });
 } catch (e) { navError = e.message; }
 ok(!navError, `renderer: runJs navigate message handled without error (${navError})`);
+ok(hijackNavigated.length === 1 && hijackNavigated[0].path === '/txt/02_2.txt',
+  `renderer: runJs navigate calls onNavigate (${JSON.stringify(hijackNavigated)})`);
 /* stale navigation (old seq from same iframe) ignored */
-let staleNavReached = false;
-const origNavigate = hijackRenderer._navigateSubFrame;
-hijackRenderer._navigateSubFrame = () => { staleNavReached = true; };
+const navCountBefore = hijackNavigated.length;
 hijackRenderer._onIframeMessage({
   source: fakeIframeWindow,
   data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/volume.htm', seq: 0 },
 });
-ok(!staleNavReached,
+ok(hijackNavigated.length === navCountBefore,
   'renderer: runJs stale navigation (old seq) ignored');
 /* non-chmv messages ignored */
 hijackRenderer._onIframeMessage({
   source: fakeIframeWindow,
   data: { source: 'other', type: 'navigate', path: '/x', seq: 99 },
 });
-ok(!staleNavReached,
+ok(hijackNavigated.length === navCountBefore,
   'renderer: runJs non-chmv messages ignored');
 /* messages from unknown sources (security) ignored */
 hijackRenderer._onIframeMessage({
   source: { __unknown: true },
   data: { source: 'chmv-iframe', type: 'navigate', path: '/evil', seq: 100 },
 });
-ok(!staleNavReached,
+ok(hijackNavigated.length === navCountBefore,
   'renderer: runJs messages from unknown iframe sources ignored (security)');
 /* second iframe gets its own seq counter (no cross-iframe collision) */
 const fakeIframeWindow2 = { __fake2: true };
 hijackRenderer._knownIframes.add(fakeIframeWindow2);
-let secondNavReached = false;
-hijackRenderer._navigateSubFrame = () => { secondNavReached = true; };
 hijackRenderer._onIframeMessage({
   source: fakeIframeWindow2,
   data: { source: 'chmv-iframe', type: 'navigate', path: '/index1/readall.htm', seq: 1 },
 });
-ok(secondNavReached,
+ok(hijackNavigated.length === navCountBefore + 1,
   'renderer: runJs second iframe nav not blocked by first iframe seq');
-hijackRenderer._navigateSubFrame = origNavigate;
 /* request-blob message warms the cache for a path not yet seen.
  * Must use a known iframe source (security validation). */
 const beforeMiss = hijackRenderer.runJsBlobs.size;
